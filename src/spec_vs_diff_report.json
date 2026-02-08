@@ -1,0 +1,177 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-08T12:06:16.404Z",
+  "summary": "Diff adds an initial Motoko single-actor backend with basic entities (product units, suppliers, inventory, staff/customer profiles) and a React/TanStack Router frontend with Admin ERP skeleton (dashboard/products/suppliers/inventory/staff), a Billing Mode UI, Internet Identity login, and theme toggle. However, most core commerce flows (cart/checkout/orders/POS persistence/returns/refunds/notifications/analytics/insights/xlsx tools) and OTP/password auth requirements are not implemented in the shown changes.",
+  "missing_requirements": [
+    {
+      "id": "REQ-1",
+      "requirement": "Core backend data models and APIs for products (with categories/variants/units), suppliers, inventory (min-stock, expiry, damaged), customers, staff roles/permissions, carts, online orders (status history), offline POS sales, returns, refunds; stable persistence across upgrades; transactional inventory updates for order/POS/refund/cancel; order status timeline.",
+      "reason": "Backend file shown defines only ProductUnit/Supplier/InventoryEntry/StaffAccount/CustomerAccount/UserProfile and a few CRUD/profile endpoints; no evidence of carts, orders, POS sale records, returns/refunds, damaged stock fields, status history/timeline, or stable-friendly persistence patterns (stable vars/preupgrade/postupgrade).",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Mobile-first customer storefront with product details, add-to-cart, checkout creating online orders (with stock validation), order history, and order tracking with status history.",
+      "reason": "Customer UI shown is primarily a catalog/browse page; no cart state/CRUD, no checkout flow calling backend to create an order, and no order history/detail/status tracking pages evidenced.",
+      "evidence": [
+        "frontend/src/pages/customer/CatalogPage.tsx",
+        "frontend/src/App.tsx"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Auth flows for customers and staff: register with mobile/email, OTP verification, login via OTP or password, password reset via OTP; enforce role-based access (cashier/deliveryBoy/manager) across protected routes.",
+      "reason": "Frontend uses Internet Identity login and a profile setup dialog; no OTP generation/verification, no password auth, no password reset. Route guards check only `userType` (staff vs customer) and do not enforce cashier vs deliveryBoy vs manager permissions. Backend shows role type but no login/OTP/password/reset APIs.",
+      "evidence": [
+        "frontend/src/hooks/useInternetIdentity.ts",
+        "frontend/src/components/auth/ProfileSetupDialog.tsx",
+        "frontend/src/App.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Shared inventory synchronization between online orders and offline POS sales; UI updates via polling/refresh; block checkout/POS completion when insufficient stock with clear error.",
+      "reason": "Frontend polling exists for product units (refetchInterval), and Billing Mode UI blocks adding beyond stock, but there is no evidence that completing a sale creates a POS sale record in backend or deducts stock server-side, nor any online order placement/cancellation/refund inventory transactions.",
+      "evidence": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/billing/BillingModePage.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "requirement": "Admin ERP: product management (add/edit), supplier-wise stock management, min stock alerts configuration, expiry tracking, damaged stock recording, inventory list views with search/filters (low stock/expiring/expired/damaged).",
+      "reason": "Admin pages for products/suppliers/inventory exist, but no evidence of product edit, supplier-wise grouped stock views, expiry date input/tracking, damaged stock recording, or inventory filters for expiring/expired/damaged.",
+      "evidence": [
+        "frontend/src/pages/admin/ProductsPage.tsx",
+        "frontend/src/pages/admin/InventoryPage.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "requirement": "Excel (.xlsx) import/export for products/inventory with validation, server-side apply, idempotent updates, and success/error summary.",
+      "reason": "No .xlsx tooling, upload/download endpoints, or UI components are evidenced in the diff.",
+      "evidence": [
+        "frontend/src/pages/admin/AdminLayout.tsx",
+        "frontend/src/pages/admin/ProductsPage.tsx",
+        "frontend/src/pages/admin/InventoryPage.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "requirement": "Billing Mode POS: search, quantity, discount, payment (Cash/UPI), complete sale; on completion save POS sale record and deduct stock from shared inventory; include POS sales in analytics.",
+      "reason": "Billing Mode UI supports search/quantity/discount/payment selection, but `completeSale` only shows a toast and clears local state; no evidence of backend call to persist sale and deduct inventory, and no analytics integration for POS sales.",
+      "evidence": [
+        "frontend/src/pages/billing/BillingModePage.tsx",
+        "backend/main.mo",
+        "frontend/src/pages/admin/DashboardPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "requirement": "Admin order management workflows: accept/reject (with reason), status updates with history, assign delivery staff, delivery boy assigned-orders view, approve returns, process refunds, and restore inventory on cancel/refund.",
+      "reason": "No order management pages/routes are shown; backend does not show order entities/status history/assignment/returns/refunds APIs.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "frontend/src/pages/admin/AdminLayout.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "requirement": "Notification event logging for order status changes and alerts (new order, low stock, high value order) with admin alerts panel and customer notification history on order pages.",
+      "reason": "No notification event model, logging, thresholds, alerts panel tied to events, or customer order detail notification history is evidenced. Dashboard shows low stock counts but not an event log.",
+      "evidence": [
+        "frontend/src/pages/admin/DashboardPage.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-10",
+      "requirement": "Admin dashboard analytics combining online orders + POS: totals by time range, online vs offline split, cash vs UPI, profit (cost vs selling), stock alerts, top-selling, expiry warnings.",
+      "reason": "Dashboard currently computes only total products, inventory value, low stock, out of stock based on products+inventory; no sales/order/POS aggregation, time-range filtering, payment breakdown, profit, top-selling, or expiry widgets evidenced.",
+      "evidence": [
+        "frontend/src/pages/admin/DashboardPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-11",
+      "requirement": "Deterministic 'AI-style' insights: demand forecasting, reorder suggestions, smart pricing suggestions, fraud/anomaly flags, dead stock alerts; Insights page with configurable windows.",
+      "reason": "No Insights page/routes and no backend/frontend analytics/heuristics implementations are evidenced.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-12",
+      "requirement": "Dark/light mode across customer/admin/billing with toggle and local persistence; large touch-friendly controls.",
+      "reason": "Theme toggle and next-themes provider are present, but the diff summary does not show configuration ensuring persisted theme choice (e.g., ThemeProvider settings) across all areas; also not all screens are visible due to truncation, so full coverage cannot be confirmed from evidence.",
+      "evidence": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/ThemeToggle.tsx",
+        "frontend/src/index.css"
+      ]
+    },
+    {
+      "id": "REQ-13",
+      "requirement": "Coherent kirana-market visual theme (avoid blue/purple) with palette/typography/spacing guidelines applied consistently across customer/admin/billing.",
+      "reason": "A non-blue primary palette is defined in CSS variables, but no explicit theme guidelines/documentation and full app-wide consistent application cannot be verified from the truncated diff.",
+      "evidence": [
+        "frontend/src/index.css"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Secret URL parameter `caffeineAdminToken` used to initialize backend access control.",
+      "reason": "BuildRequest did not specify a secret-token-based admin bootstrap mechanism via URL parameters; only role-based staff permissions and Internet Identity were requested.",
+      "evidence": [
+        "frontend/src/hooks/useActor.ts"
+      ]
+    },
+    {
+      "description": "User profile setup flow allowing users to choose 'customer' or 'staff' locally, with staff instructed to contact admin for registration.",
+      "reason": "BuildRequest specifies customer/staff registration with mobile/email + OTP/password flows and explicit staff role enforcement; this profile wizard is a different, unrequested auth/onboarding approach (and bypasses OTP/password requirements).",
+      "evidence": [
+        "frontend/src/components/auth/ProfileSetupDialog.tsx"
+      ]
+    }
+  ],
+  "confidence": 0.74,
+  "changed_files": [
+    "all_files_summary.json",
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/index.css",
+    "frontend/index.html",
+    "frontend/src/App.tsx",
+    "frontend/src/components/KiranaBrandHeader.tsx",
+    "frontend/src/components/ThemeToggle.tsx",
+    "frontend/src/components/auth/AccessDeniedScreen.tsx",
+    "frontend/src/components/auth/LoginButton.tsx",
+    "frontend/src/components/auth/ProfileSetupDialog.tsx",
+    "frontend/src/hooks/useActor.ts",
+    "frontend/src/hooks/useInternetIdentity.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/main.tsx",
+    "frontend/src/pages/admin/AdminLayout.tsx",
+    "frontend/src/pages/admin/DashboardPage.tsx",
+    "frontend/src/pages/admin/InventoryPage.tsx",
+    "frontend/src/pages/admin/ProductsPage.tsx",
+    "frontend/src/pages/admin/StaffPage.tsx",
+    "frontend/src/pages/admin/SuppliersPage.tsx",
+    "frontend/src/pages/billing/BillingModePage.tsx",
+    "frontend/src/pages/customer/CatalogPage.tsx",
+    "frontend/src/utils/urlParams.ts",
+    "frontend/tailwind.config.js",
+    "project_state.json"
+  ]
+}

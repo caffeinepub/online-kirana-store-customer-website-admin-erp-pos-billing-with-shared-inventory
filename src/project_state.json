@@ -1,0 +1,185 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Full-stack, production-ready online grocery system for a small kirana (dry grocery only) with customer mobile-friendly website and Admin ERP, supporting shared real-time inventory across online orders and offline POS billing, OTP-based auth, notifications, inventory/Excel tools, staff roles, order/delivery/refunds, dashboards, and AI-based insights.",
+  "architectural_notes": [
+    "Single shared inventory ledger must be the source of truth for both online orders and offline POS to prevent stock mismatch.",
+    "Notification system must support SMS, Email, and WhatsApp channels triggered by order-status transitions and admin alert rules.",
+    "Offline billing mode must support intermittent connectivity with sync/backfill to cloud when online."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "imageRequirements": "## Required Images\n- Kirana storefront logo mark in a warm market style (kirana-logo.dim_512x512.png)\n- Mobile hero banner illustration showing dry grocery items (rice/atta/dal/oil/snacks/soap/shampoo) in a clean flat style (hero-banner.dim_1600x600.png)\n- Set of 8 category icons in matching style (categories-icons-sprite.dim_1024x1024.png)",
+  "existing_features": [
+    {
+      "id": "feature-build-a-mobile-first-customer-storefront-browse-search-dry-grocery-catalog-product-details-add-to-cart-checkout-view-order-history-and-track-order-status",
+      "title": "Build a mobile-first customer storefront: browse/search dry-grocery catalog, product details, add-to-cart, checkout, view order history, and track order status.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-authentication-flows-for-customers-and-staff-accounts-supporting-register-with-mobile-number-or-email-otp-verification-login-via-otp-or-password-and-password-reset-via-otp-enforce-role-based-access-for-admin-erp-staff-roles-cashier-delivery-boy-manager",
+      "title": "Add authentication flows for customers and staff accounts, supporting: register with mobile number or email, OTP verification, login via OTP or password, and password reset via OTP; enforce role-based access for Admin ERP staff roles (cashier, delivery boy, manager).",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-shared-inventory-synchronization-between-online-orders-and-offline-pos-sales-so-that-stock-changes-in-one-channel-are-visible-in-the-other-provide-near-real-time-updates-in-the-ui-via-polling-refresh-patterns",
+      "title": "Implement shared inventory synchronization between online orders and offline POS sales so that stock changes in one channel are visible in the other; provide near-real-time updates in the UI via polling/refresh patterns.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-an-admin-erp-web-app-area-with-product-management-add-edit-supplier-wise-stock-management-min-stock-alert-configuration-expiry-tracking-damaged-stock-recording-and-inventory-list-views",
+      "title": "Create an Admin ERP web app area with: product management (add/edit), supplier-wise stock management, min stock alert configuration, expiry tracking, damaged stock recording, and inventory list views.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-excel-xlsx-import-export-tools-in-admin-erp-for-stock-products-upload-an-xlsx-to-bulk-create-update-products-and-inventory-download-current-stock-export-reports",
+      "title": "Add Excel (.xlsx) import/export tools in Admin ERP for stock/products: upload an .xlsx to bulk create/update products and inventory; download current stock/export reports.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-admin-billing-mode-phone-based-pos-optimized-for-android-browsers-product-search-quantity-entry-add-to-bill-apply-discount-select-payment-method-cash-upi-and-complete-sale-on-completion-save-the-sale-and-deduct-stock-from-the-shared-inventory",
+      "title": "Implement Admin “Billing Mode” (phone-based POS) optimized for Android browsers: product search, quantity entry, add to bill, apply discount, select payment method (Cash/UPI), and complete sale; on completion, save the sale and deduct stock from the shared inventory.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-order-management-workflows-in-admin-erp-accept-reject-orders-update-statuses-placed-packed-out-for-delivery-delivered-cancelled-refunded-assign-delivery-staff-track-assigned-orders-approve-returns-and-process-refunds",
+      "title": "Implement order management workflows in Admin ERP: accept/reject orders, update statuses (placed/packed/out for delivery/delivered/cancelled/refunded), assign delivery staff, track assigned orders, approve returns, and process refunds.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-notification-event-logging-for-order-status-changes-and-key-admin-alerts-new-order-low-stock-and-high-value-order-expose-views-in-admin-erp-and-customer-order-pages-showing-the-notification-history",
+      "title": "Add notification event logging for order status changes and key admin alerts: new order, low stock, and high value order; expose views in Admin ERP and customer order pages showing the notification history.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-admin-dashboard-analytics-combining-online-orders-and-offline-pos-sales-online-offline-sales-totals-cash-vs-upi-breakdown-profit-based-on-cost-vs-selling-price-stock-alerts-top-selling-items-and-expiry-warnings",
+      "title": "Create Admin dashboard analytics combining online orders and offline POS sales: online+offline sales totals, cash vs UPI breakdown, profit (based on cost vs selling price), stock alerts, top selling items, and expiry warnings.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-ai-style-insights-as-on-device-back-end-deterministic-analytics-no-external-ai-services-demand-forecasting-e-g-moving-average-reorder-suggestions-based-on-forecast-lead-time-min-stock-smart-pricing-suggestions-rule-based-fraud-anomaly-flags-e-g-unusual-discounts-refunds-and-dead-stock-alerts-no-sales-for-n-days",
+      "title": "Implement AI-style insights as on-device/back-end deterministic analytics (no external AI services): demand forecasting (e.g., moving average), reorder suggestions (based on forecast + lead time + min stock), smart pricing suggestions (rule-based), fraud/anomaly flags (e.g., unusual discounts/refunds), and dead stock alerts (no sales for N days).",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-dark-mode-and-light-mode-across-customer-site-admin-erp-and-billing-mode-with-a-clean-kirana-style-ui-and-consistently-large-touch-friendly-controls",
+      "title": "Implement dark mode and light mode across customer site, Admin ERP, and Billing Mode, with a clean kirana-style UI and consistently large, touch-friendly controls.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-establish-a-coherent-distinct-visual-theme-for-the-entire-app-customer-admin-billing-with-a-kirana-market-aesthetic-avoid-blue-purple-define-color-palette-typography-spacing-and-component-usage-guidelines-and-apply-consistently",
+      "title": "Establish a coherent, distinct visual theme for the entire app (customer + admin + billing) with a kirana-market aesthetic (avoid blue/purple): define color palette, typography, spacing, and component usage guidelines and apply consistently.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Customer website (mobile-first) for dry grocery catalog, cart, checkout, order tracking; fast UI with big buttons and dark/light mode",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Customer authentication: register/login with mobile or email, OTP verification via SMS/email, OTP login or password login, password reset via OTP",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Unified real-time inventory shared between online orders and offline (walk-in) sales, with reliable sync",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Admin ERP: product & inventory management (add/edit products, min stock alerts, expiry/damaged tracking, supplier-wise stock)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Excel tools: import stock/products via .xlsx and export/download stock reports",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Order notifications: status-change alerts to customers via SMS+Email (and WhatsApp), plus admin alerts (new order, low stock, high value order)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Offline billing / phone-based POS in Admin (“Billing Mode”) for Android: product search, qty, cash/UPI, discounts, complete sale; deduct stock, save sale, sync online",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Admin order management: accept/reject, pack/dispatch statuses, assign delivery, track orders, returns approval, refunds processing",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Staff roles & permissions with logins: cashier, delivery boy, manager",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Admin dashboard & analytics: online+offline sales, cash vs UPI, profit, stock alerts, top sellers, expiry warnings; plus AI tools (demand forecast, reorder suggestions, smart pricing, fraud detection, dead stock alerts)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Implement core backend data models and APIs in the single Motoko actor for a dry-grocery kirana store: products (variants/units), suppliers, inventory (including min-stock threshold, expiry date, and damaged stock), customers, staff accounts with roles/permissions, carts, online orders (with status history), offline POS sales, returns, and refunds.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Online Kirana Store: Customer Website + Admin ERP + POS Billing with Shared Inventory",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}
