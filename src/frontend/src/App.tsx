@@ -1,10 +1,12 @@
+import { StrictMode, useEffect, useState } from 'react';
 import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { InternetIdentityProvider } from './hooks/useInternetIdentity';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
-import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile, useGetCallerUserRole } from './hooks/useQueries';
-import ProfileSetupDialog from './components/auth/ProfileSetupDialog';
-import CustomerLayout from './pages/customer/CustomerLayout';
+import { useAuthStatus } from './hooks/useAuthStatus';
+import { useGetCallerUserProfile, useSaveCallerUserProfile } from './hooks/useQueries';
+
 import CatalogPage from './pages/customer/CatalogPage';
 import CartPage from './pages/customer/CartPage';
 import CheckoutPage from './pages/customer/CheckoutPage';
@@ -20,94 +22,120 @@ import DashboardPage from './pages/admin/DashboardPage';
 import ProductsPage from './pages/admin/ProductsPage';
 import OrderManagementPage from './pages/admin/OrderManagementPage';
 import AccessDeniedScreen from './components/auth/AccessDeniedScreen';
-import { UserRole } from './backend';
-import { useEffect } from 'react';
+import ProfileSetupDialog from './components/auth/ProfileSetupDialog';
+import CustomerLayout from './pages/customer/CustomerLayout';
+import { Loader2 } from 'lucide-react';
 
-// Root layout component
-function RootLayout() {
-  return (
-    <div className="min-h-screen bg-background">
-      <Outlet />
-      <Toaster />
-    </div>
-  );
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function CustomerLayoutWrapper() {
+  const { isAuthenticated, isAdmin, isLoading } = useAuthStatus();
+  const navigate = useNavigate();
+
+  // Auto-redirect authenticated admins to /admin
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && isAdmin) {
+      navigate({ to: '/admin', replace: true });
+    }
+  }, [isAuthenticated, isAdmin, isLoading, navigate]);
+
+  return <CustomerLayout />;
 }
 
-// Admin route guard component
 function AdminRouteGuard() {
-  const { identity } = useInternetIdentity();
-  const { data: role, isLoading } = useGetCallerUserRole();
-
-  if (!identity) {
-    return <AccessDeniedScreen />;
-  }
+  const { isAuthenticated, isAdmin, isLoading } = useAuthStatus();
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (role !== UserRole.admin) {
+  if (!isAuthenticated || !isAdmin) {
     return <AccessDeniedScreen />;
   }
 
   return <AdminLayout />;
 }
 
-// Customer route guard for cart/checkout/orders
-function CustomerRouteGuard({ children }: { children: React.ReactNode }) {
-  const { identity } = useInternetIdentity();
+function CustomerRouteGuard() {
+  const { isAuthenticated, isLoading } = useAuthStatus();
 
-  if (!identity) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <AccessDeniedScreen />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }
 
-// Customer layout wrapper with admin auto-redirect
-function CustomerLayoutWrapper() {
-  const navigate = useNavigate();
-  const { identity, isInitializing } = useInternetIdentity();
-  const { data: role, isLoading: roleLoading } = useGetCallerUserRole();
-  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
+function ProfileSetupWrapper({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading: authLoading } = useAuthStatus();
+  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
+  const saveProfile = useSaveCallerUserProfile();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Only redirect after everything is loaded and user has a profile
-    if (!isInitializing && !roleLoading && !profileLoading && identity && userProfile && role === UserRole.admin) {
-      const currentPath = window.location.pathname;
-      // Only redirect if not already on admin route
-      if (!currentPath.startsWith('/admin')) {
-        navigate({ to: '/admin', replace: true });
-      }
+    if (isAuthenticated && !authLoading && !profileLoading && isFetched && userProfile === null) {
+      setIsDialogOpen(true);
     }
-  }, [identity, role, userProfile, isInitializing, roleLoading, profileLoading, navigate]);
+  }, [isAuthenticated, authLoading, profileLoading, isFetched, userProfile]);
 
-  return <CustomerLayout />;
+  const handleProfileSave = async (profile: { name: string; email: string; address: string }) => {
+    try {
+      await saveProfile.mutateAsync(profile);
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <>
+      {children}
+      <ProfileSetupDialog
+        open={isDialogOpen}
+        onSave={handleProfileSave}
+        isSaving={saveProfile.isPending}
+      />
+    </>
+  );
 }
 
-// Create root route
 const rootRoute = createRootRoute({
-  component: RootLayout,
+  component: () => (
+    <ProfileSetupWrapper>
+      <Outlet />
+    </ProfileSetupWrapper>
+  ),
 });
 
-// Login route (no auth required)
-const loginRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/login',
-  component: LoginPage,
-});
-
-// Customer routes with layout
 const customerLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
-  id: 'customer',
+  id: 'customer-layout',
   component: CustomerLayoutWrapper,
 });
 
@@ -135,106 +163,96 @@ const goalsRoute = createRoute({
   component: GoalsPage,
 });
 
-const cartRoute = createRoute({
+const customerGuardRoute = createRoute({
   getParentRoute: () => customerLayoutRoute,
+  id: 'customer-guard',
+  component: CustomerRouteGuard,
+});
+
+const cartRoute = createRoute({
+  getParentRoute: () => customerGuardRoute,
   path: '/cart',
-  component: () => (
-    <CustomerRouteGuard>
-      <CartPage />
-    </CustomerRouteGuard>
-  ),
+  component: CartPage,
 });
 
 const checkoutRoute = createRoute({
-  getParentRoute: () => customerLayoutRoute,
+  getParentRoute: () => customerGuardRoute,
   path: '/checkout',
-  component: () => (
-    <CustomerRouteGuard>
-      <CheckoutPage />
-    </CustomerRouteGuard>
-  ),
-});
-
-const ordersRoute = createRoute({
-  getParentRoute: () => customerLayoutRoute,
-  path: '/orders',
-  component: () => (
-    <CustomerRouteGuard>
-      <OrdersPage />
-    </CustomerRouteGuard>
-  ),
-});
-
-const orderTrackingRoute = createRoute({
-  getParentRoute: () => customerLayoutRoute,
-  path: '/orders/$orderId',
-  component: () => (
-    <CustomerRouteGuard>
-      <OrderTrackingPage />
-    </CustomerRouteGuard>
-  ),
+  component: CheckoutPage,
 });
 
 const orderConfirmationRoute = createRoute({
-  getParentRoute: () => customerLayoutRoute,
+  getParentRoute: () => customerGuardRoute,
   path: '/order-confirmation/$orderId',
-  component: () => (
-    <CustomerRouteGuard>
-      <OrderConfirmationPage />
-    </CustomerRouteGuard>
-  ),
+  component: OrderConfirmationPage,
 });
 
-// Admin routes with protection
-const adminRoute = createRoute({
+const ordersRoute = createRoute({
+  getParentRoute: () => customerGuardRoute,
+  path: '/orders',
+  component: OrdersPage,
+});
+
+const orderTrackingRoute = createRoute({
+  getParentRoute: () => customerGuardRoute,
+  path: '/orders/$orderId',
+  component: OrderTrackingPage,
+});
+
+const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/admin',
+  path: '/login',
+  component: LoginPage,
+});
+
+const adminLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'admin-layout',
   component: AdminRouteGuard,
 });
 
 const adminDashboardRoute = createRoute({
-  getParentRoute: () => adminRoute,
-  path: '/',
+  getParentRoute: () => adminLayoutRoute,
+  path: '/admin',
   component: DashboardPage,
 });
 
 const adminProductsRoute = createRoute({
-  getParentRoute: () => adminRoute,
-  path: '/products',
+  getParentRoute: () => adminLayoutRoute,
+  path: '/admin/products',
   component: ProductsPage,
 });
 
 const adminOrdersRoute = createRoute({
-  getParentRoute: () => adminRoute,
-  path: '/orders',
+  getParentRoute: () => adminLayoutRoute,
+  path: '/admin/orders',
   component: OrderManagementPage,
 });
 
-// Create route tree
 const routeTree = rootRoute.addChildren([
-  loginRoute,
   customerLayoutRoute.addChildren([
     indexRoute,
     aboutRoute,
     contactRoute,
     goalsRoute,
-    cartRoute,
-    checkoutRoute,
-    ordersRoute,
-    orderTrackingRoute,
-    orderConfirmationRoute,
+    customerGuardRoute.addChildren([
+      cartRoute,
+      checkoutRoute,
+      orderConfirmationRoute,
+      ordersRoute,
+      orderTrackingRoute,
+    ]),
   ]),
-  adminRoute.addChildren([
+  loginRoute,
+  adminLayoutRoute.addChildren([
     adminDashboardRoute,
     adminProductsRoute,
     adminOrdersRoute,
   ]),
 ]);
 
-// Create router
 const router = createRouter({ routeTree });
 
-// Type declaration for router
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router;
@@ -242,27 +260,16 @@ declare module '@tanstack/react-router' {
 }
 
 export default function App() {
-  const { identity, isInitializing } = useInternetIdentity();
-  const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
-
-  const isAuthenticated = !!identity;
-  const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
-
-  if (isInitializing) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Initializing...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <RouterProvider router={router} />
-      {showProfileSetup && <ProfileSetupDialog />}
-    </ThemeProvider>
+    <StrictMode>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <QueryClientProvider client={queryClient}>
+          <InternetIdentityProvider>
+            <RouterProvider router={router} />
+            <Toaster />
+          </InternetIdentityProvider>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </StrictMode>
   );
 }

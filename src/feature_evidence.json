@@ -2,10 +2,9 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-identify-and-fix-the-root-cause-s-of-the-version-7-production-go-live-publish-failure-by-performing-a-full-frontend-backend-build-pass-and-resolving-any-compile-build-runtime-blocking-errors-with-minimal-stability-focused-changes",
-      "featureTitle": "Identify and fix the root cause(s) of the Version 7 production go-live (publish) failure by performing a full frontend + backend build pass and resolving any compile/build/runtime-blocking errors with minimal, stability-focused changes.",
+      "featureId": "feature-update-the-unified-frontend-login-page-to-remove-placeholder-toast-only-behavior-for-email-password-and-otp-tabs-and-wire-both-flows-to-the-new-backend-apis-using-clear-english-user-facing-messages-for-success-and-failure-states",
+      "featureTitle": "Update the unified frontend Login page to remove placeholder/toast-only behavior for Email+Password and OTP tabs and wire both flows to the new backend APIs, using clear English user-facing messages for success and failure states.",
       "files": [
-        "frontend/src/App.tsx",
         "frontend/src/pages/auth/LoginPage.tsx"
       ],
       "components": [
@@ -18,15 +17,14 @@
         "blob-storage@4.0.0"
       ],
       "testIds": [
-        "REQ-45"
+        "REQ-55"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-audit-routing-guard-redirect-logic-to-ensure-no-navigation-occurs-during-render-and-that-redirects-are-handled-in-effects-or-equivalent-safe-patterns-to-prevent-runtime-crashes-during-deployment-first-load",
-      "featureTitle": "Audit routing/guard/redirect logic to ensure no navigation occurs during render and that redirects are handled in effects (or equivalent safe patterns) to prevent runtime crashes during deployment/first load.",
+      "featureId": "feature-run-a-focused-full-build-pass-frontend-backend-and-fix-any-compile-runtime-blockers-introduced-or-revealed-by-implementing-email-password-otp-auth-keeping-changes-minimal-and-stability-focused",
+      "featureTitle": "Run a focused full build pass (frontend + backend) and fix any compile/runtime blockers introduced or revealed by implementing Email+Password + OTP auth, keeping changes minimal and stability-focused.",
       "files": [
-        "frontend/src/App.tsx",
         "frontend/src/pages/auth/LoginPage.tsx"
       ],
       "components": [
@@ -39,7 +37,7 @@
         "blob-storage@4.0.0"
       ],
       "testIds": [
-        "REQ-46"
+        "REQ-57"
       ],
       "confidence": "high"
     }

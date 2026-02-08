@@ -1,84 +1,114 @@
 {
   "kind": "build_request",
-  "title": "Fix Version 7 go-live failure and run a clean rebuild",
+  "title": "Implement Email+Password + OTP login (replace placeholders) and ensure Admin redirect",
   "priority": "high",
   "requirements": [
     {
-      "id": "REQ-45",
-      "text": "Identify and fix the root cause(s) of the Version 7 production go-live (publish) failure by performing a full frontend + backend build pass and resolving any compile/build/runtime-blocking errors with minimal, stability-focused changes.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-6",
-          "msg-7"
-        ],
-        "quotes": [
-          "🙏 Go live failed: Deployment error",
-          "go live failed version 7",
-          "fix and rebuild"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Backend canister builds successfully (Motoko compilation completes with no errors).",
-        "Frontend builds successfully (TypeScript + bundler build completes with no errors).",
-        "App can start and render the root route (/) and login route (/login) without runtime exceptions in the console.",
-        "A new draft can be generated and the publish/go-live step completes successfully without deployment errors."
-      ]
-    },
-    {
-      "id": "REQ-46",
-      "text": "Audit routing/guard/redirect logic to ensure no navigation occurs during render and that redirects are handled in effects (or equivalent safe patterns) to prevent runtime crashes during deployment/first load.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-6",
-          "msg-7"
-        ],
-        "quotes": [
-          "🙏 Go live failed: Deployment error",
-          "go live failed version 7",
-          "fix and rebuild"
-        ]
-      },
-      "acceptanceCriteria": [
-        "No route performs navigate()/redirect imperatively during the render path (only in effects or router lifecycle hooks).",
-        "Visiting /login while already authenticated redirects without triggering React warnings/errors about updates during render.",
-        "Visiting /admin as a non-admin shows the Access Denied screen without errors."
-      ]
-    },
-    {
-      "id": "REQ-47",
-      "text": "Verify backend authorization/bootstrap-admin logic builds and behaves correctly in a clean deployment so that admin gating does not cause traps/errors during app initialization (e.g., role/profile queries).",
+      "id": "REQ-53",
+      "text": "Implement backend Email+Password authentication APIs in the single Motoko actor so a user can authenticate with email and password, and the backend can assign roles based on the authenticated identity.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5",
-          "msg-6",
-          "msg-7"
+          "recent-messages"
         ],
         "quotes": [
-          "🙏 Go live failed: Deployment error",
-          "go live failed version 7",
-          "fix and rebuild"
+          "email+Password authentication is not yet implemented. Please use Internet Identity to sign in....this message coming so implement",
+          "admin email is jogoshree@gmail.com and password is Admin@123"
         ]
       },
       "acceptanceCriteria": [
-        "Backend query/mutation methods used by the app at startup (role/profile/products) do not trap for valid authenticated users due to missing permissions initialization.",
-        "Saving a caller user profile with email matching the configured bootstrap admin email (case-insensitive, trimmed) assigns Admin role without errors.",
-        "Admin-only methods remain protected and return a clear trap message when called by non-admins."
+        "Backend exposes an Email+Password login API that accepts an email and password and returns a successful result when credentials are valid, and a failure result when credentials are invalid.",
+        "On successful credential login, the backend associates the caller Principal with the authenticated email identity for subsequent role checks/queries in this app session (as defined by the backend API contract).",
+        "If the authenticated email matches the configured bootstrap admin email (case-insensitive, trimmed), the backend assigns the Admin role to the caller principal (or confirms Admin role already assigned).",
+        "The seeded admin credentials use email \"jogoshree@gmail.com\" and password \"Admin@123\" exactly (resolve any mismatch with prior seeded password values so this login works)."
+      ]
+    },
+    {
+      "id": "REQ-54",
+      "text": "Implement backend OTP authentication APIs in the single Motoko actor to request an OTP for an email or mobile identifier and to verify the OTP to authenticate the caller.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "1.yes 2.both 3.ye"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes an OTP request API that accepts an email or mobile identifier and creates an OTP challenge with a limited validity window.",
+        "Backend exposes an OTP verify API that accepts the identifier + OTP code and returns success only for the correct, unexpired OTP.",
+        "On successful OTP verification, the backend associates the caller Principal with the authenticated identifier for subsequent role checks/queries in this app session (as defined by the backend API contract).",
+        "The OTP flow works without any external SMS/email provider integrations (no Twilio/SendGrid/etc.)."
+      ]
+    },
+    {
+      "id": "REQ-55",
+      "text": "Update the unified frontend Login page to remove placeholder/toast-only behavior for Email+Password and OTP tabs and wire both flows to the new backend APIs, using clear English user-facing messages for success and failure states.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "email+Password authentication is not yet implemented. Please use Internet Identity to sign in....this message coming so implement",
+          "1.yes 2.both"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The Email+Password tab no longer shows the 'under development' warning messaging and no longer toasts 'not yet implemented' on submit; instead it calls the backend and shows an error message only when authentication fails.",
+        "The OTP tab no longer shows the 'under development' warning messaging and no longer toasts 'not yet available' on submit; instead it supports (1) requesting an OTP and (2) verifying it via backend calls.",
+        "After successful Email+Password or OTP login, the app redirects Admin users to /admin and non-admin users to / (no navigation during render; redirects happen via effects or router actions already used elsewhere).",
+        "All user-facing text related to these flows is in English and does not mention 'Coming soon'/'not implemented' for features that are implemented by this change."
+      ]
+    },
+    {
+      "id": "REQ-56",
+      "text": "Ensure Admin routing behavior matches requirements across all supported login methods: after successful login, if the caller role is Admin then route to the Admin panel (/admin); otherwise route to the customer homepage (/).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "admin redirect to admin panel as i said before"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After Internet Identity login, authenticated Admin users are redirected to /admin; non-admin users are redirected to /.",
+        "After Email+Password login, authenticated Admin users are redirected to /admin; non-admin users are redirected to /.",
+        "After OTP login, authenticated Admin users are redirected to /admin; non-admin users are redirected to /."
+      ]
+    },
+    {
+      "id": "REQ-57",
+      "text": "Run a focused full build pass (frontend + backend) and fix any compile/runtime blockers introduced or revealed by implementing Email+Password + OTP auth, keeping changes minimal and stability-focused.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "build"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Motoko canister compiles successfully with the new auth APIs.",
+        "Frontend builds without TypeScript errors and the /login page loads without runtime crashes.",
+        "Logging in via Email+Password and OTP can be exercised end-to-end from the /login page without hitting placeholder toasts or unimplemented code paths."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor with all logic in backend/main.mo; only add backend/migration.mo if an upgrade requires state migration.",
-    "Do not edit frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, and any files under frontend/src/components/ui; compose/wrap instead.",
-    "Use English for any user-facing text."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit files under frontend/src/components/ui or any paths listed in frontend.immutablePaths (compose existing components instead).",
+    "No third-party authentication providers beyond existing Internet Identity; no Google OAuth.",
+    "No external SMS/email delivery integrations for OTP (must function without Twilio/SendGrid/SMTP/Webhooks)."
   ],
   "nonGoals": [
-    "Do not add new product features or redesign UI as part of this fix pass; focus on deployment/build stability only.",
-    "Do not add external services (databases, third-party auth providers, websockets, email/SMS providers) as part of this rebuild request."
+    "Implementing real OTP delivery via SMS/Email/WhatsApp providers.",
+    "Implementing password reset flows beyond basic login.",
+    "Adding new admin/staff role management features beyond what is needed to authenticate and route correctly."
   ],
   "imageRequirements": {
     "required": [],

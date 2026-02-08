@@ -1,53 +1,78 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Stabilize Version 7 go-live by fixing frontend build/runtime blockers and safe routing redirects",
+  "title": "Wire Email+Password + OTP login UI to backend auth APIs and enforce Admin redirect",
   "requirements": [
     {
-      "id": "REQ-45",
-      "summary": "Resolve frontend compile/build/runtime-blocking issues discovered during a clean rebuild with minimal stability-focused changes.",
+      "id": "REQ-55",
+      "summary": "Replace placeholder Email+Password and OTP login behaviors on /login with real backend calls and clear success/failure messaging.",
       "acceptanceCriteria": [
-        "Backend canister builds successfully (Motoko compilation completes with no errors).",
-        "Frontend builds successfully (TypeScript + bundler build completes with no errors).",
-        "App can start and render the root route (/) and login route (/login) without runtime exceptions in the console.",
-        "A new draft can be generated and the publish/go-live step completes successfully without deployment errors."
+        "The Email+Password tab no longer shows the 'under development' warning messaging and no longer toasts 'not yet implemented' on submit; instead it calls the backend and shows an error message only when authentication fails.",
+        "The OTP tab no longer shows the 'under development' warning messaging and no longer toasts 'not yet available' on submit; instead it supports (1) requesting an OTP and (2) verifying it via backend calls.",
+        "After successful Email+Password or OTP login, the app redirects Admin users to /admin and non-admin users to / (no navigation during render; redirects happen via effects or router actions already used elsewhere).",
+        "All user-facing text related to these flows is in English and does not mention 'Coming soon'/'not implemented' for features that are implemented by this change."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/auth/LoginPage.tsx",
+          "operation": "modify",
+          "description": "Implement real Email+Password and OTP flows: remove placeholder alerts/toasts, add submit handlers that call the new backend capabilities via the actor, render clear English inline error/success states, and on success trigger query invalidation so existing effect-based redirect logic can route Admin to /admin and others to /. Verify the component's usage instructions before implementing (authorization: role-based access control + graceful handling of backend authorization errors)."
+        },
+        {
+          "path": "frontend/src/hooks/useLocalIdentity.ts",
+          "operation": "create",
+          "description": "Add a small identity helper hook to create/persist a non-Internet-Identity agent identity for Email+Password/OTP sessions (e.g., stored locally) so backend role checks and session association can work for these login methods. Verify the component's usage instructions before implementing (authorization: treat anonymous as guest; clear cached data on logout)."
+        },
+        {
+          "path": "frontend/src/hooks/useActor.ts",
+          "operation": "modify",
+          "description": "Extend actor creation to support selecting the active identity source (Internet Identity vs locally persisted identity for Email+Password/OTP), and ensure dependent React Query caches are invalidated/refetched when the active identity changes. Verify the component's usage instructions before implementing (authorization: clear cached application data on logout / identity change)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-56",
+      "summary": "Ensure consistent Admin vs customer redirects after successful login across Internet Identity, Email+Password, and OTP.",
+      "acceptanceCriteria": [
+        "After Internet Identity login, authenticated Admin users are redirected to /admin; non-admin users are redirected to /.",
+        "After Email+Password login, authenticated Admin users are redirected to /admin; non-admin users are redirected to /.",
+        "After OTP login, authenticated Admin users are redirected to /admin; non-admin users are redirected to /."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAuthStatus.ts",
+          "operation": "modify",
+          "description": "Update derived auth/admin status to reflect the active login method (Internet Identity and the Email+Password/OTP local identity), while continuing to use backend role queries for Admin detection; keep redirect-safe loading semantics so redirects occur in effects rather than during render. Verify the component's usage instructions before implementing (authorization: role-based access control + query gating patterns)."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Confirm routing guards and existing effect-based redirects remain compatible with the unified auth status for all login methods (AdminRouteGuard, CustomerRouteGuard, and CustomerLayoutWrapper), adjusting only as needed to ensure Admins reliably land on /admin after any successful login. Verify the component's usage instructions before implementing (authorization: show access denied for unauthorized users; handle backend traps gracefully)."
+        },
+        {
+          "path": "frontend/src/components/auth/LoginButton.tsx",
+          "operation": "modify",
+          "description": "Update logout behavior to clear both Internet Identity and any local identity used for Email+Password/OTP, and clear React Query caches so role/profile-dependent redirects remain correct after re-login. Verify the component's usage instructions before implementing (authorization: clear cached application data, including cached user profile, on logout)."
+        }
+      ]
+    },
+    {
+      "id": "REQ-57",
+      "summary": "Perform a stability-focused frontend build pass and fix TypeScript/runtime issues related to adding Email+Password + OTP auth UI wiring.",
+      "acceptanceCriteria": [
+        "Frontend builds without TypeScript errors and the /login page loads without runtime crashes.",
+        "Logging in via Email+Password and OTP can be exercised end-to-end from the /login page without hitting placeholder toasts or unimplemented code paths."
       ],
       "file_operations": [
         {
           "path": "frontend/src/backend.d.ts",
           "operation": "modify",
-          "description": "Align the generated/declared backendInterface type with the actor usage in the frontend so TypeScript builds cleanly (e.g., include the access-control initialization function that the actor wrapper invokes)."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Stabilize app startup rendering by removing any browser-global assumptions and ensuring initial-route rendering/redirect logic cannot throw at first load (keep changes minimal and focused on build/runtime stability). Also ensure admin auto-redirect remains effect-driven. Use the selected \"authorization\" component patterns for role-based gating behavior where applicable; verify the component's usage instructions before implementing."
+          "description": "Update the typed backend interface definitions to include the new Email+Password and OTP authentication capabilities used by the Login page, so TypeScript builds cleanly once the backend is updated to match. (Keep changes minimal and aligned to the backend contract.)"
         },
         {
           "path": "frontend/src/pages/auth/LoginPage.tsx",
           "operation": "modify",
-          "description": "Ensure the /login route renders safely in all auth states and that post-login redirection remains stable and non-blocking (no render-time navigation, no loops), supporting clean first load and production builds. Use the selected \"authorization\" component patterns for authenticated redirects/role checks where applicable; verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-46",
-      "summary": "Audit and fix routing/guard/redirect logic to prevent any navigate/redirect during render and handle redirects in effects or router-safe lifecycle hooks.",
-      "acceptanceCriteria": [
-        "No route performs navigate()/redirect imperatively during the render path (only in effects or router lifecycle hooks).",
-        "Visiting /login while already authenticated redirects without triggering React warnings/errors about updates during render.",
-        "Visiting /admin as a non-admin shows the Access Denied screen without errors."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Refactor guard/wrapper logic to ensure navigation decisions (including admin auto-redirect) are derived from router state and executed only within effects (or router lifecycle hooks), never during render, and cannot cause redirect loops. Use the selected \"authorization\" component guidance for AccessDenied behavior and role-based gating; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/auth/LoginPage.tsx",
-          "operation": "modify",
-          "description": "Harden authenticated-user redirect handling so that /login redirects are performed only in effects once role state is ready, using safe replace-style navigation and avoiding any state updates during render. Use the selected \"authorization\" component guidance for login/logout cache-clearing and role-based redirects; verify the component's usage instructions before implementing."
+          "description": "Stability pass: ensure all new async flows handle loading/disabled states, validation, and error rendering without crashes; remove any remaining placeholder-only code paths for Email+Password and OTP tabs."
         }
       ]
     }

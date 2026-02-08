@@ -1,48 +1,64 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T15:00:04.443Z",
+  "generatedAt": "2026-02-08T16:08:33.543Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
+    "total": 5,
     "implemented": 2,
     "items": [
       {
-        "id": "REQ-45",
-        "summary": "Identify and fix the root cause(s) of the Version 7 production go-live (publish) failure by performing a full frontend + backend build pass and resolving any compile/build/runtime-blocking errors with minimal, stability-focused changes.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/backend.d.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/pages/auth/LoginPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/auth/LoginPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-46",
-        "summary": "Audit routing/guard/redirect logic to ensure no navigation occurs during render and that redirects are handled in effects (or equivalent safe patterns) to prevent runtime crashes during deployment/first load.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/auth/LoginPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/auth/LoginPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-47",
-        "summary": "Verify backend authorization/bootstrap-admin logic builds and behaves correctly in a clean deployment so that admin gating does not cause traps/errors during app initialization (e.g., role/profile queries).",
+        "id": "REQ-53",
+        "summary": "Implement backend Email+Password authentication APIs in the single Motoko actor so a user can authenticate with email and password, and the backend can assign roles based on the authenticated identity.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
+      },
+      {
+        "id": "REQ-54",
+        "summary": "Implement backend OTP authentication APIs in the single Motoko actor to request an OTP for an email or mobile identifier and to verify the OTP to authenticate the caller.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-55",
+        "summary": "Update the unified frontend Login page to remove placeholder/toast-only behavior for Email+Password and OTP tabs and wire both flows to the new backend APIs, using clear English user-facing messages for success and failure states.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/auth/LoginPage.tsx",
+          "frontend/src/hooks/useLocalIdentity.ts",
+          "frontend/src/hooks/useActor.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/auth/LoginPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-56",
+        "summary": "Ensure Admin routing behavior matches requirements across all supported login methods: after successful login, if the caller role is Admin then route to the Admin panel (/admin); otherwise route to the customer homepage (/).",
+        "status": "missing",
+        "plannedFiles": [
+          "frontend/src/hooks/useAuthStatus.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/components/auth/LoginButton.tsx"
+        ],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-57",
+        "summary": "Run a focused full build pass (frontend + backend) and fix any compile/runtime blockers introduced or revealed by implementing Email+Password + OTP auth, keeping changes minimal and stability-focused.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/backend.d.ts",
+          "frontend/src/pages/auth/LoginPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/auth/LoginPage.tsx"
+        ]
       }
     ]
   },
@@ -52,7 +68,6 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
     "frontend/src/pages/auth/LoginPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",

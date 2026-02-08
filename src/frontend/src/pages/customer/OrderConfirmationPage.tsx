@@ -5,7 +5,7 @@ import { CheckCircle, Package, ArrowRight } from 'lucide-react';
 
 export default function OrderConfirmationPage() {
   const navigate = useNavigate();
-  const { orderId } = useParams({ from: '/customer/order-confirmation/$orderId' });
+  const { orderId } = useParams({ strict: false });
 
   return (
     <div className="container px-4 py-8">
@@ -32,7 +32,7 @@ export default function OrderConfirmationPage() {
               <Button
                 className="w-full h-12"
                 size="lg"
-                onClick={() => navigate({ to: `/orders/${orderId}` })}
+                onClick={() => navigate({ to: '/orders/$orderId', params: { orderId: orderId as string } })}
               >
                 Track Order
                 <ArrowRight className="ml-2 h-5 w-5" />

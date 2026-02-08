@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 17,
+  "projectStateVersion": 21,
   "summary": "Full-stack online kirana system for Shree Kirana with a polished, professional UI including a completely redesigned grocery-style homepage (richer 3D/animated hero + polished categories section using mixed grid/carousel), expanded authentication to support Internet Identity + OTP login + email/password login via a single unified login page (customer/admin) plus customer signup, backend-seeded admin credentials for jogoshree@gmail.com with automatic redirect to the Admin panel on successful admin login, and an expanded preloaded catalog (~200 items total) with static product images added by the build.",
   "architectural_notes": [
     "Single shared inventory ledger must be the source of truth for both online orders and offline POS to prevent stock mismatch.",
@@ -10,7 +10,8 @@
     "Platform auth scope decision: implement Internet Identity + OTP login + password login; skip Google/Facebook/social OAuth.",
     "Admin bootstrap decision: persist a seeded admin identity in backend storage (email+password) with Admin role; after login, route Admins directly to /admin.",
     "Data seeding requirement: include a backend/seed script or initialization routine to preload ~100 catalog items and associated image assets (placeholders if needed).",
-    "Homepage UI direction: combine the new grocery-style 3D/animated hero concept with the mixed-layout (grid+carousel) polished categories section, applied across the entire homepage."
+    "Homepage UI direction: combine the new grocery-style 3D/animated hero concept with the mixed-layout (grid+carousel) polished categories section, applied across the entire homepage.",
+    "Admin credential seed decision update: admin email is jogoshree@gmail.com and the desired seeded password is \"Admin@123\" (note prior references used \"Admmin@123\"); ensure frontend+backend agree on the same credential."
   ],
   "known_issues": [
     "Admin login is not available/working; user can only log in as customer and staff.",
@@ -19,7 +20,10 @@
     "Build attempt failed with error: 'The AI couldn't implement your request. Please simplify or rephrase your prompt.' (needs smaller steps / incremental implementation).",
     "Deployment/build pipeline error reported as: \"you don't have a draft yet\" (user requests regenerating a draft and redeploying).",
     "Email/password login flow is not working; must be fixed to enable successful email+password authentication.",
-    "Production go-live (publish) failed for Draft/Version 7; needs fix pass + clean rebuild to generate a deployable release."
+    "Production go-live (publish) failed for Draft/Version 7; needs fix pass + clean rebuild to generate a deployable release.",
+    "Unified Login page: Email and Password input fields are not clickable/interactive, preventing users from typing credentials.",
+    "Build/implementation attempt failed with: 'Sorry, the AI was unable to implement your request. You could try to rephrase or simplify your prompt.' (needs smaller steps / incremental implementation for Email+Password + OTP).",
+    "Admin seeded password mismatch risk: conversation specifies Admin password \"Admin@123\" while project state includes \"Admmin@123\" in multiple places; must reconcile to avoid failed admin login."
   ],
   "isFixRequest": true,
   "existing_features": [
@@ -326,6 +330,62 @@
         "REQ-46"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-fix-the-unified-login-page-so-the-email-and-password-fields-are-interactive-clickable-and-typeable-and-the-email-password-tab-no-longer-uses-disabled-inputs-buttons",
+      "title": "Fix the unified Login page so the Email and Password fields are interactive (clickable and typeable) and the Email+Password tab no longer uses disabled inputs/buttons.",
+      "reqIds": [
+        "REQ-48"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-the-placeholder-destructive-warning-text-and-placeholder-toasts-on-the-login-page-that-claim-email-password-and-otp-require-backend-implementation-when-the-user-attempts-to-use-them-replace-with-accurate-english-messaging-based-on-what-is-actually-implemented-in-this-build",
+      "title": "Remove the placeholder/destructive warning text and placeholder toasts on the Login page that claim Email+Password and OTP “require backend implementation” when the user attempts to use them; replace with accurate English messaging based on what is actually implemented in this build.",
+      "reqIds": [
+        "REQ-49"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-working-email-password-authentication-end-to-end-add-backend-apis-for-credential-authentication-and-wire-the-login-page-email-password-form-to-call-those-apis-and-redirect-the-user-after-successful-login-based-on-role-admin-admin-otherwise",
+      "title": "Implement working Email+Password authentication end-to-end: add backend APIs for credential authentication, and wire the Login page Email+Password form to call those APIs and redirect the user after successful login based on role (Admin -> /admin, otherwise -> /).",
+      "reqIds": [
+        "REQ-50"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-and-or-restore-the-seeded-admin-credential-login-path-so-the-known-admin-email-can-sign-in-using-email-password-and-gain-admin-access-without-manual-admin-key-steps-consistent-with-the-project-s-bootstrap-admin-model",
+      "title": "Implement and/or restore the seeded Admin credential login path so the known Admin email can sign in using Email+Password and gain Admin access without manual admin-key steps, consistent with the project’s bootstrap-admin model.",
+      "reqIds": [
+        "REQ-51"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-do-a-focused-fix-other-issues-if-exists-stability-pass-related-to-authentication-routing-so-login-and-redirects-do-not-cause-runtime-errors-ensure-no-navigation-occurs-during-render-and-that-login-related-flows-behave-correctly-on-first-load-and-refresh",
+      "title": "Do a focused “fix other issues if exists” stability pass related to authentication/routing so login and redirects do not cause runtime errors: ensure no navigation occurs during render and that login-related flows behave correctly on first load and refresh.",
+      "reqIds": [
+        "REQ-52"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-unified-frontend-login-page-to-remove-placeholder-toast-only-behavior-for-email-password-and-otp-tabs-and-wire-both-flows-to-the-new-backend-apis-using-clear-english-user-facing-messages-for-success-and-failure-states",
+      "title": "Update the unified frontend Login page to remove placeholder/toast-only behavior for Email+Password and OTP tabs and wire both flows to the new backend APIs, using clear English user-facing messages for success and failure states.",
+      "reqIds": [
+        "REQ-55"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-run-a-focused-full-build-pass-frontend-backend-and-fix-any-compile-runtime-blockers-introduced-or-revealed-by-implementing-email-password-otp-auth-keeping-changes-minimal-and-stability-focused",
+      "title": "Run a focused full build pass (frontend + backend) and fix any compile/runtime blockers introduced or revealed by implementing Email+Password + OTP auth, keeping changes minimal and stability-focused.",
+      "reqIds": [
+        "REQ-57"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -524,6 +584,36 @@
       "summary": "Verify backend authorization/bootstrap-admin logic builds and behaves correctly in a clean deployment so that admin gating does not cause traps/errors during app initialization (e.g., role/profile queries).",
       "reqIds": [
         "REQ-47"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-37",
+      "summary": "Implement OTP login end-to-end (backend OTP APIs + frontend OTP form on unified Login page) and remove/replace the current “Email+Password authentication is not yet implemented; use Internet Identity” placeholder messaging with real working flows",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-38",
+      "summary": "Implement backend Email+Password authentication APIs in the single Motoko actor so a user can authenticate with email and password, and the backend can assign roles based on the authenticated identity.",
+      "reqIds": [
+        "REQ-53"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-39",
+      "summary": "Implement backend OTP authentication APIs in the single Motoko actor to request an OTP for an email or mobile identifier and to verify the OTP to authenticate the caller.",
+      "reqIds": [
+        "REQ-54"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-41",
+      "summary": "Ensure Admin routing behavior matches requirements across all supported login methods: after successful login, if the caller role is Admin then route to the Admin panel (/admin); otherwise route to the customer homepage (/).",
+      "reqIds": [
+        "REQ-56"
       ],
       "status": "pending"
     }

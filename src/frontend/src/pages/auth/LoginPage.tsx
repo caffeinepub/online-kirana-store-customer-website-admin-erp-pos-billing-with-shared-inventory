@@ -1,42 +1,57 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-import { useGetCallerUserRole } from '../../hooks/useQueries';
+import { useAuthStatus } from '../../hooks/useAuthStatus';
+import { useGetBootstrapAdminEmail } from '../../hooks/useQueries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Fingerprint, Mail, Smartphone, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
-import { UserRole } from '../../backend';
+import { Fingerprint, Mail, Smartphone, AlertCircle, Loader2, Eye, EyeOff, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, loginStatus, identity } = useInternetIdentity();
-  const { data: role, isLoading: roleLoading } = useGetCallerUserRole();
+  const { login, loginStatus } = useInternetIdentity();
+  const { isAuthenticated, isAdmin, isLoading } = useAuthStatus();
+  const { data: bootstrapEmail } = useGetBootstrapAdminEmail();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isEmailPasswordLoading, setIsEmailPasswordLoading] = useState(false);
+  const [emailPasswordError, setEmailPasswordError] = useState<string | null>(null);
   
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
 
   const isLoggingIn = loginStatus === 'logging-in';
 
+  // Validate email format
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  // Check if email+password form is valid
+  const isEmailPasswordValid = email.trim().length > 0 && 
+                                isValidEmail(email) && 
+                                password.trim().length > 0;
+
   // Safe redirect logic using useEffect
   useEffect(() => {
-    if (identity && !roleLoading && role !== undefined) {
-      if (role === UserRole.admin) {
+    if (isAuthenticated && !isLoading) {
+      if (isAdmin) {
         navigate({ to: '/admin', replace: true });
       } else {
         navigate({ to: '/', replace: true });
       }
     }
-  }, [identity, role, roleLoading, navigate]);
+  }, [isAuthenticated, isAdmin, isLoading, navigate]);
 
   const handleInternetIdentityLogin = async () => {
     try {
@@ -48,23 +63,74 @@ export default function LoginPage() {
     }
   };
 
-  const handleEmailPasswordLogin = (e: React.FormEvent) => {
+  const handleEmailPasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.error('Email+Password login requires backend implementation');
+    setEmailPasswordError(null);
+    setIsEmailPasswordLoading(true);
+
+    try {
+      // TODO: Call backend API when implemented
+      // const result = await actor.loginWithEmailPassword(email, password);
+      
+      // Simulate backend call to show the error
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      throw new Error('Email+Password authentication backend API is not yet implemented. The backend needs to be updated with loginWithEmailPassword() method.');
+    } catch (error: any) {
+      console.error('Email+Password login error:', error);
+      setEmailPasswordError(error.message || 'Authentication failed');
+      toast.error('Login failed: Backend API not implemented');
+    } finally {
+      setIsEmailPasswordLoading(false);
+    }
   };
 
-  const handleOtpRequest = (e: React.FormEvent) => {
+  const handleOtpRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.error('OTP login requires backend implementation');
+    setOtpError(null);
+    setIsOtpLoading(true);
+
+    try {
+      // TODO: Call backend API when implemented
+      // const result = await actor.requestOTP(mobile);
+      
+      // Simulate backend call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      throw new Error('OTP authentication backend API is not yet implemented. The backend needs to be updated with requestOTP() method.');
+    } catch (error: any) {
+      console.error('OTP request error:', error);
+      setOtpError(error.message || 'Failed to send OTP');
+      toast.error('OTP request failed: Backend API not implemented');
+    } finally {
+      setIsOtpLoading(false);
+    }
   };
 
-  const handleOtpVerify = (e: React.FormEvent) => {
+  const handleOtpVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.error('OTP verification requires backend implementation');
+    setOtpError(null);
+    setIsOtpLoading(true);
+
+    try {
+      // TODO: Call backend API when implemented
+      // const result = await actor.verifyOTP(mobile, otp);
+      
+      // Simulate backend call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      throw new Error('OTP verification backend API is not yet implemented. The backend needs to be updated with verifyOTP() method.');
+    } catch (error: any) {
+      console.error('OTP verify error:', error);
+      setOtpError(error.message || 'OTP verification failed');
+      toast.error('OTP verification failed: Backend API not implemented');
+    } finally {
+      setIsOtpLoading(false);
+    }
   };
 
   // Show loading state while checking authentication
-  if (identity && roleLoading) {
+  if (isAuthenticated && isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -84,10 +150,10 @@ export default function LoginPage() {
         </div>
 
         <Alert>
-          <AlertCircle className="h-4 w-4" />
+          <Info className="h-4 w-4" />
           <AlertDescription>
-            <strong>Note:</strong> Google, Facebook, and other social login options are not supported. 
-            Available options: Internet Identity, Email+Password, and Email/Mobile+OTP.
+            <strong>Available login methods:</strong> Internet Identity (recommended), Email+Password, and Email/Mobile+OTP.
+            Google and other social logins are not supported.
           </AlertDescription>
         </Alert>
 
@@ -153,12 +219,12 @@ export default function LoginPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Alert className="mb-4" variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Email+Password authentication requires backend implementation and is not yet available.
-                  </AlertDescription>
-                </Alert>
+                {emailPasswordError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{emailPasswordError}</AlertDescription>
+                  </Alert>
+                )}
                 <form onSubmit={handleEmailPasswordLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address</Label>
@@ -168,9 +234,9 @@ export default function LoginPage() {
                       placeholder="your.email@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      disabled
                       required
                       autoComplete="email"
+                      disabled={isEmailPasswordLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -182,16 +248,17 @@ export default function LoginPage() {
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        disabled
                         required
                         autoComplete="current-password"
                         className="pr-10"
+                        disabled={isEmailPasswordLoading}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        disabled
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        tabIndex={-1}
+                        disabled={isEmailPasswordLoading}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -201,11 +268,25 @@ export default function LoginPage() {
                     type="submit"
                     className="w-full"
                     size="lg"
-                    disabled
+                    disabled={!isEmailPasswordValid || isEmailPasswordLoading}
                   >
-                    <Mail className="mr-2 h-5 w-5" />
-                    Sign In
+                    {isEmailPasswordLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Signing In...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="mr-2 h-5 w-5" />
+                        Sign In
+                      </>
+                    )}
                   </Button>
+                  {bootstrapEmail && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Admin credentials: {bootstrapEmail} / Admin@123
+                    </p>
+                  )}
                 </form>
               </CardContent>
             </Card>
@@ -220,12 +301,12 @@ export default function LoginPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Alert className="mb-4" variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    OTP authentication requires backend implementation and is not yet available.
-                  </AlertDescription>
-                </Alert>
+                {otpError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{otpError}</AlertDescription>
+                  </Alert>
+                )}
                 {!otpSent ? (
                   <form onSubmit={handleOtpRequest} className="space-y-4">
                     <div className="space-y-2">
@@ -236,13 +317,27 @@ export default function LoginPage() {
                         placeholder="email@example.com or +91 98765 43210"
                         value={mobile}
                         onChange={(e) => setMobile(e.target.value)}
-                        disabled
                         required
+                        disabled={isOtpLoading}
                       />
                     </div>
-                    <Button type="submit" className="w-full" size="lg" disabled>
-                      <Smartphone className="mr-2 h-5 w-5" />
-                      Send OTP
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      size="lg"
+                      disabled={mobile.trim().length === 0 || isOtpLoading}
+                    >
+                      {isOtpLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Sending OTP...
+                        </>
+                      ) : (
+                        <>
+                          <Smartphone className="mr-2 h-5 w-5" />
+                          Send OTP
+                        </>
+                      )}
                     </Button>
                   </form>
                 ) : (
@@ -255,20 +350,36 @@ export default function LoginPage() {
                         placeholder="Enter 6-digit OTP"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
-                        disabled
                         required
                         maxLength={6}
+                        disabled={isOtpLoading}
                       />
                     </div>
-                    <Button type="submit" className="w-full" size="lg" disabled>
-                      Verify OTP
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      size="lg"
+                      disabled={otp.trim().length !== 6 || isOtpLoading}
+                    >
+                      {isOtpLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        'Verify OTP'
+                      )}
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       className="w-full"
-                      onClick={() => setOtpSent(false)}
-                      disabled
+                      onClick={() => {
+                        setOtpSent(false);
+                        setOtp('');
+                        setOtpError(null);
+                      }}
+                      disabled={isOtpLoading}
                     >
                       Resend OTP
                     </Button>

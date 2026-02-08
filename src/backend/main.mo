@@ -5,12 +5,11 @@ import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Set "mo:core/Set";
 import Text "mo:core/Text";
-import Iter "mo:core/Iter";
-import Runtime "mo:core/Runtime";
 import Char "mo:core/Char";
 import Principal "mo:core/Principal";
 
 import MixinStorage "blob-storage/Mixin";
+import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
@@ -65,7 +64,6 @@ actor {
     "a25536229ee0fe395b3ed77f72f1b279972d8b4787ceebfad977784b62bede6b",
     "b66571589ee0fe395b3ed77f72f1b279972d8b4787ceebfad977784b"
   ];
-
   for (key in defaultAdminKeys.vals()) {
     adminPublicKeys.add(key);
   };
@@ -112,10 +110,13 @@ actor {
   };
 
   public shared ({ caller }) func authenticateAdmin(providedPublicKey : Text) : async Bool {
+    // SECURITY FIX: Only existing admins can use public keys to grant admin privileges to others
+    // This prevents unauthorized privilege escalation
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only existing admins can authenticate with public keys");
+    };
+    
     if (adminPublicKeys.contains(providedPublicKey)) {
-      if (not AccessControl.isAdmin(accessControlState, caller)) {
-        AccessControl.assignRole(accessControlState, caller, caller, #admin);
-      };
       true;
     } else {
       false;

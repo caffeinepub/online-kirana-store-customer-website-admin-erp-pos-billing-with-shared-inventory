@@ -9,14 +9,17 @@ import { toast } from 'sonner';
 
 export default function OrderTrackingPage() {
   const navigate = useNavigate();
-  const { orderId } = useParams({ from: '/customer/orders/$orderId' });
+  const { orderId } = useParams({ strict: false });
   const getOrder = useGetOrder();
 
   useEffect(() => {
-    loadOrder();
+    if (orderId) {
+      loadOrder();
+    }
   }, [orderId]);
 
   const loadOrder = async () => {
+    if (!orderId) return;
     try {
       await getOrder.mutateAsync(BigInt(orderId));
     } catch (error: any) {
