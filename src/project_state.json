@@ -1,15 +1,27 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 3,
-  "summary": "Full-stack, production-ready online grocery system for a small kirana (dry grocery only) with customer mobile-friendly website and Admin ERP, supporting shared real-time inventory across online orders and offline POS billing, OTP-based auth, notifications, inventory/Excel tools, staff roles, order/delivery/refunds, dashboards, and AI-based insights.",
+  "projectStateVersion": 17,
+  "summary": "Full-stack online kirana system for Shree Kirana with a polished, professional UI including a completely redesigned grocery-style homepage (richer 3D/animated hero + polished categories section using mixed grid/carousel), expanded authentication to support Internet Identity + OTP login + email/password login via a single unified login page (customer/admin) plus customer signup, backend-seeded admin credentials for jogoshree@gmail.com with automatic redirect to the Admin panel on successful admin login, and an expanded preloaded catalog (~200 items total) with static product images added by the build.",
   "architectural_notes": [
     "Single shared inventory ledger must be the source of truth for both online orders and offline POS to prevent stock mismatch.",
     "Notification system must support SMS, Email, and WhatsApp channels triggered by order-status transitions and admin alert rules.",
-    "Offline billing mode must support intermittent connectivity with sync/backfill to cloud when online."
+    "Offline billing mode must support intermittent connectivity with sync/backfill to cloud when online.",
+    "Authentication must support password-based login and Google sign-in, and must map a designated admin email identity to Admin role with direct routing to the Admin panel.",
+    "Platform auth scope decision: implement Internet Identity + OTP login + password login; skip Google/Facebook/social OAuth.",
+    "Admin bootstrap decision: persist a seeded admin identity in backend storage (email+password) with Admin role; after login, route Admins directly to /admin.",
+    "Data seeding requirement: include a backend/seed script or initialization routine to preload ~100 catalog items and associated image assets (placeholders if needed).",
+    "Homepage UI direction: combine the new grocery-style 3D/animated hero concept with the mixed-layout (grid+carousel) polished categories section, applied across the entire homepage."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
-  "imageRequirements": "## Required Images\n- Kirana storefront logo mark in a warm market style (kirana-logo.dim_512x512.png)\n- Mobile hero banner illustration showing dry grocery items (rice/atta/dal/oil/snacks/soap/shampoo) in a clean flat style (hero-banner.dim_1600x600.png)\n- Set of 8 category icons in matching style (categories-icons-sprite.dim_1024x1024.png)",
+  "known_issues": [
+    "Admin login is not available/working; user can only log in as customer and staff.",
+    "Many planned functionalities/features are missing or not working; user expects a full-fledged working website experience with properly organized pages.",
+    "Deployment/domain name error: domain must be 5–50 characters and contain only letters, numbers, and hyphens.",
+    "Build attempt failed with error: 'The AI couldn't implement your request. Please simplify or rephrase your prompt.' (needs smaller steps / incremental implementation).",
+    "Deployment/build pipeline error reported as: \"you don't have a draft yet\" (user requests regenerating a draft and redeploying).",
+    "Email/password login flow is not working; must be fixed to enable successful email+password authentication.",
+    "Production go-live (publish) failed for Draft/Version 7; needs fix pass + clean rebuild to generate a deployable release."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-build-a-mobile-first-customer-storefront-browse-search-dry-grocery-catalog-product-details-add-to-cart-checkout-view-order-history-and-track-order-status",
@@ -106,6 +118,214 @@
         "REQ-13"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-fix-admin-authentication-and-authorization-so-that-an-admin-can-successfully-access-the-admin-erp-area-and-billing-mode-if-allowed-using-internet-identity-instead-of-being-blocked-by-the-current-staff-only-route-guards",
+      "title": "Fix Admin authentication and authorization so that an Admin can successfully access the Admin ERP area (and Billing Mode if allowed) using Internet Identity, instead of being blocked by the current “staff-only” route guards.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-complete-and-ensure-the-core-customer-shopping-flow-works-end-to-end-as-a-full-website-experience-product-browsing-add-to-cart-cart-review-checkout-order-placement-order-history-and-order-status-tracking-fix-any-missing-non-working-functionality-in-these-flows",
+      "title": "Complete and ensure the core customer shopping flow works end-to-end as a full website experience: product browsing, add-to-cart, cart review, checkout, order placement, order history, and order status tracking; fix any missing/non-working functionality in these flows.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-and-properly-route-essential-informational-website-pages-for-the-customer-facing-site-about-us-contact-us-and-goals-mission-ensure-they-are-accessible-from-the-header-footer-navigation-and-are-styled-consistently-with-the-existing-theme",
+      "title": "Add and properly route essential informational website pages for the customer-facing site: About Us, Contact Us, and Goals/Mission; ensure they are accessible from the header/footer navigation and are styled consistently with the existing theme.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-re-organize-navigation-and-page-structure-so-the-project-behaves-like-a-full-fledged-website-clear-header-footer-navigation-consistent-layouts-and-sensible-route-structure-for-both-customer-and-admin-areas-without-breaking-existing-admin-erp-pages",
+      "title": "Re-organize navigation and page structure so the project behaves like a full-fledged website (clear header/footer navigation, consistent layouts, and sensible route structure) for both customer and admin areas, without breaking existing admin ERP pages.",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-user-profile-email-jogoshree-gmail-com-is-treated-as-an-admin-bootstrap-identity-when-a-logged-in-internet-identity-user-has-a-saved-profile-with-email-exactly-jogoshree-gmail-com-case-insensitive-trim-automatically-assign-that-principal-the-admin-role-in-the-backend-so-they-can-access-the-admin-erp-area-without-manual-admin-key-steps",
+      "title": "Ensure the user profile email \"jogoshree@gmail.com\" is treated as an Admin bootstrap identity: when a logged-in Internet Identity user has a saved profile with email exactly \"jogoshree@gmail.com\" (case-insensitive trim), automatically assign that principal the Admin role in the backend so they can access the Admin ERP area without manual admin-key steps.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-after-a-successful-internet-identity-login-if-the-caller-role-is-admin-automatically-route-the-user-to-the-admin-panel-admin-instead-of-leaving-them-on-the-customer-storefront",
+      "title": "After a successful Internet Identity login, if the caller role is Admin, automatically route the user to the Admin panel (/admin) instead of leaving them on the customer storefront.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-store-branding-text-across-customer-and-admin-ui-from-kirana-store-to-shree-kirana-including-header-alt-text-labels-and-hero-banner-text-where-applicable",
+      "title": "Update store branding text across customer and admin UI from \"Kirana Store\" to \"Shree Kirana\" (including header alt text/labels and hero banner text where applicable).",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-polish-the-customer-homepage-hero-section-to-look-more-professional-including-adding-an-on-brand-3d-animated-visual-element-three-js-via-react-three-fiber-that-does-not-block-core-interactions-or-significantly-degrade-performance-on-mobile-devices",
+      "title": "Polish the customer homepage hero section to look more professional, including adding an on-brand 3D/animated visual element (Three.js via React Three Fiber) that does not block core interactions or significantly degrade performance on mobile devices.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-and-use-the-provided-generated-branding-images-as-static-frontend-assets-no-backend-routing-ensure-the-logo-and-hero-images-are-present-under-frontend-public-assets-generated-and-referenced-from-the-ui",
+      "title": "Add and use the provided/generated branding images as static frontend assets (no backend routing): ensure the logo and hero images are present under frontend/public/assets/generated and referenced from the UI.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-an-admin-manageable-mechanism-in-the-admin-erp-ui-backend-api-to-update-which-email-address-is-treated-as-the-bootstrap-admin-email-for-auto-admin-assignment-replacing-hard-coded-reliance-on-only-jogoshree-gmail-com-while-keeping-jogoshree-gmail-com-as-the-initial-default",
+      "title": "Implement an Admin-manageable mechanism (in the Admin ERP UI + backend API) to update which email address is treated as the bootstrap Admin email for auto-admin assignment, replacing hard-coded reliance on only \"jogoshree@gmail.com\" while keeping \"jogoshree@gmail.com\" as the initial default.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-clear-english-user-facing-messaging-on-the-login-admin-access-screens-explaining-that-authentication-is-via-internet-identity-no-google-oauth-and-no-password-login-in-this-build-and-that-admin-access-is-determined-by-admin-role-assignment",
+      "title": "Add clear, English user-facing messaging on the login/admin-access screens explaining that authentication is via Internet Identity (no Google OAuth and no password login in this build), and that admin access is determined by Admin role assignment.",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-single-unified-login-page-that-supports-internet-identity-login-and-provides-ui-entry-points-for-email-password-and-email-mobile-otp-login-with-clear-english-messaging-that-google-social-login-is-not-supported-in-this-build",
+      "title": "Add a single unified Login page that supports Internet Identity login and provides UI entry points for Email+Password and Email/Mobile+OTP login, with clear English messaging that Google/social login is not supported in this build.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-login-flow-so-that-after-a-successful-admin-credential-authentication-email-password-the-app-redirects-the-user-to-the-admin-panel-admin",
+      "title": "Update frontend login flow so that after a successful admin credential authentication (email/password), the app redirects the user to the Admin panel (/admin).",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-and-reference-static-product-images-for-the-preloaded-catalog-under-frontend-public-assets-generated-and-ensure-preloaded-product-imageurl-values-point-to-those-static-assets-no-backend-image-routing",
+      "title": "Add and reference static product images for the preloaded catalog under frontend/public/assets/generated, and ensure preloaded product imageUrl values point to those static assets (no backend image routing).",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-the-customer-homepage-hero-section-to-better-match-a-grocery-kirana-store-aesthetic-with-more-advanced-animation-3d-polish-while-preserving-performance-on-mobile-and-respecting-reduced-motion-preferences",
+      "title": "Improve the customer homepage hero section to better match a grocery/kirana store aesthetic with more advanced animation/3D polish, while preserving performance on mobile and respecting reduced-motion preferences.",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-all-user-facing-authentication-access-denied-messaging-to-reflect-the-new-supported-login-options-internet-identity-otp-password-and-to-clearly-state-that-google-social-login-is-not-supported",
+      "title": "Update all user-facing authentication/access-denied messaging to reflect the new supported login options (Internet Identity + OTP + Password) and to clearly state that Google/social login is not supported.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-current-homepage-hero-presentation-with-a-completely-new-grocery-style-hero-design-that-includes-advanced-animation-and-a-richer-3d-scene-e-g-a-basket-plus-fruits-vegetables-and-packaged-goods-while-preserving-mobile-performance-and-honoring-reduced-motion-preferences",
+      "title": "Replace the current homepage hero presentation with a completely new grocery-style hero design that includes advanced animation and a richer 3D scene (e.g., a basket plus fruits/vegetables and packaged goods) while preserving mobile performance and honoring reduced-motion preferences.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-homepage-categories-section-to-use-a-mixed-layout-grid-carousel-with-polished-grocery-themed-styling-and-make-category-selection-update-the-product-filtering-on-the-homepage",
+      "title": "Redesign the homepage categories section to use a mixed layout (grid + carousel) with polished grocery-themed styling, and make category selection update the product filtering on the homepage.",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-fix-frontend-build-runtime-blockers-related-to-routing-navigation-so-the-frontend-builds-cleanly-and-does-not-navigate-during-render-in-particular-update-the-login-page-logic-to-perform-redirects-in-an-effect-or-an-equivalent-safe-pattern-instead-of-calling-navigate-inside-the-render-path-when-identity-is-already-present",
+      "title": "Fix frontend build/runtime blockers related to routing/navigation so the frontend builds cleanly and does not navigate during render. In particular, update the /login page logic to perform redirects in an effect (or an equivalent safe pattern) instead of calling navigate() inside the render path when identity is already present.",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-run-a-full-project-build-pass-frontend-backend-and-fix-any-remaining-typescript-lint-like-or-bundler-issues-that-prevent-generating-a-deployable-draft-keeping-changes-minimal-and-focused-on-deployment-stability",
+      "title": "Run a full project build pass (frontend + backend) and fix any remaining TypeScript, lint-like, or bundler issues that prevent generating a deployable draft, keeping changes minimal and focused on deployment stability.",
+      "reqIds": [
+        "REQ-39"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-customer-homepage-the-route-rendered-by-catalogpage-by-combining-a-a-completely-new-grocery-style-hero-section-that-includes-a-richer-3d-basket-grocery-scene-and-motion-polish-and-b-a-polished-categories-section-that-uses-a-mixed-layout-grid-carousel-with-grocery-themed-cards-icons-selecting-a-category-must-update-the-product-filtering-shown-on-the-homepage",
+      "title": "Redesign the customer homepage (the / route rendered by CatalogPage) by combining: (a) a completely new grocery-style hero section that includes a richer 3D basket/grocery scene and motion polish, and (b) a polished categories section that uses a mixed layout (grid + carousel) with grocery-themed cards/icons; selecting a category must update the product filtering shown on the homepage.",
+      "reqIds": [
+        "REQ-40"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-the-required-static-product-images-under-frontend-public-assets-generated-and-ensure-all-newly-seeded-products-imageurl-values-reference-these-files-directly-no-backend-image-routing",
+      "title": "Add the required static product images under frontend/public/assets/generated and ensure all newly seeded products’ imageUrl values reference these files directly (no backend image routing).",
+      "reqIds": [
+        "REQ-42"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-enable-email-password-login-end-to-end-implement-backend-authentication-apis-for-email-password-wire-them-into-the-existing-unified-login-page-and-remove-the-current-disabled-coming-soon-behavior-so-users-can-actually-sign-in-using-email-and-password",
+      "title": "Enable Email+Password login end-to-end: implement backend authentication APIs for email+password, wire them into the existing unified Login page, and remove the current disabled/“Coming Soon” behavior so users can actually sign in using email and password.",
+      "reqIds": [
+        "REQ-43"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-improve-admin-order-management-so-an-admin-can-view-full-order-details-for-an-order-line-items-with-productid-quantity-totals-status-timestamp-and-customer-principal-from-the-order-management-page-and-continue-to-update-order-status-from-the-same-screen",
+      "title": "Improve Admin order management so an Admin can view full order details for an order (line items with productId/quantity, totals, status, timestamp, and customer principal) from the Order Management page, and continue to update order status from the same screen.",
+      "reqIds": [
+        "REQ-44"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-identify-and-fix-the-root-cause-s-of-the-version-7-production-go-live-publish-failure-by-performing-a-full-frontend-backend-build-pass-and-resolving-any-compile-build-runtime-blocking-errors-with-minimal-stability-focused-changes",
+      "title": "Identify and fix the root cause(s) of the Version 7 production go-live (publish) failure by performing a full frontend + backend build pass and resolving any compile/build/runtime-blocking errors with minimal, stability-focused changes.",
+      "reqIds": [
+        "REQ-45"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-audit-routing-guard-redirect-logic-to-ensure-no-navigation-occurs-during-render-and-that-redirects-are-handled-in-effects-or-equivalent-safe-patterns-to-prevent-runtime-crashes-during-deployment-first-load",
+      "title": "Audit routing/guard/redirect logic to ensure no navigation occurs during render and that redirects are handled in effects (or equivalent safe patterns) to prevent runtime crashes during deployment/first load.",
+      "reqIds": [
+        "REQ-46"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -176,10 +396,140 @@
         "REQ-1"
       ],
       "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Enable Admin login (in addition to customer and staff logins), with proper role/permission access to Admin ERP features",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Add full website informational pages and navigation structure (e.g., About Us, Contact Us, Goals/Mission) and ensure checkout and other key pages are properly organized for customer and admin experiences",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Implement a reliable Admin bootstrap/management mechanism so the system always has a working Admin login (including after fresh deploy), without requiring manual code edits in the frontend.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Rebrand storefront/admin to shop name “Shree Kirana” and apply custom branding assets (logo/images) across customer + admin UI",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Upgrade homepage/hero to a more finished, professional look including 3D/animation elements",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Add password-based login and Google authentication; treat the specified Gmail as Admin and auto-route to Admin panel on login",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Implement multi-auth on this platform: Internet Identity + OTP login + password login (no Google/Facebook), with a single unified login page for customer/admin and a separate customer signup (name/email/password)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Seed backend with an Admin user for jogoshree@gmail.com with password Admmin@123 (stored in backend DB), assign Admin role, and redirect to /admin after successful admin login",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Preload ~100 grocery/catalog items (with details) and add product images (use placeholders/generated assets if real images not provided) so the storefront looks populated",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Upgrade the homepage hero to match a grocery store aesthetic with more advanced animation/3D and improved overall design polish",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Implement backend support for password-based authentication and OTP-based authentication for email/mobile identifiers, suitable for use from the unified Login page, without removing existing Internet Identity-based identity/role checks.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Seed the backend with an Admin credential record for email \"jogoshree@gmail.com\" and password \"Admmin@123\" stored in backend state, and on successful admin credential authentication assign the caller principal the Admin role so they can access /admin.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-27",
+      "summary": "Preload the catalog with approximately 100 grocery products (names, categories, descriptions, and imageUrl) so the customer Catalog page is populated without any manual admin data entry.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-28",
+      "summary": "Expand seeded catalog by adding 100 additional preloaded grocery products (on top of the existing ~100), each with associated static product images so the storefront looks fully populated",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-29",
+      "summary": "Redesign homepage categories section with a mixed layout (grid + carousel) and polished grocery-themed styling consistent with the new hero design",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-30",
+      "summary": "Expand the backend-seeded product catalog by adding 100 additional preloaded grocery products (on top of the existing seeded catalog), each with name, description, category, and a non-empty imageUrl that points to a static frontend asset path under /assets/generated.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-31",
+      "summary": "Fix backend Motoko compilation issues so the canister builds successfully, including adding any missing imports/types used in backend/main.mo (e.g., the Char type used in normalizeEmail) and resolving any other compile-time errors reported by the Motoko compiler.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-33",
+      "summary": "Expand the backend-seeded product catalog by adding 100 additional grocery products on top of the existing seeded catalog (total ~200), ensuring each new product has a non-empty imageUrl that points to a static frontend asset path under /assets/generated and a meaningful category value used by the homepage categories UI.",
+      "reqIds": [
+        "REQ-41"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-36",
+      "summary": "Verify backend authorization/bootstrap-admin logic builds and behaves correctly in a clean deployment so that admin gating does not cause traps/errors during app initialization (e.g., role/profile queries).",
+      "reqIds": [
+        "REQ-47"
+      ],
+      "status": "pending"
     }
   ],
   "gameProjectType": "none",
-  "projectName": "Online Kirana Store: Customer Website + Admin ERP + POS Billing with Shared Inventory",
+  "projectName": "Shree Kirana: Customer Website + Admin ERP + POS Billing with Shared Inventory",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

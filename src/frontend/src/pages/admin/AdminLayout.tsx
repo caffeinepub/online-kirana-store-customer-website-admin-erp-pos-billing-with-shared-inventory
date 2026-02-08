@@ -7,21 +7,18 @@ import LoginButton from '../../components/auth/LoginButton';
 import {
   LayoutDashboard,
   Package,
-  Warehouse,
-  Users,
-  Truck,
-  Menu,
   ShoppingBag,
-  CreditCard,
+  Menu,
+  ClipboardList,
+  Info,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const NAV_ITEMS = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/admin/products', label: 'Products', icon: Package },
-  { to: '/admin/suppliers', label: 'Suppliers', icon: Truck },
-  { to: '/admin/inventory', label: 'Inventory', icon: Warehouse },
-  { to: '/admin/staff', label: 'Staff', icon: Users },
+  { to: '/admin/orders', label: 'Orders', icon: ClipboardList },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -74,22 +71,11 @@ export default function AdminLayout() {
               <SheetContent side="left" className="w-72 p-0">
                 <div className="p-6 border-b">
                   <h2 className="text-xl font-bold">Admin Panel</h2>
-                  <p className="text-sm text-muted-foreground">Kirana Store Management</p>
+                  <p className="text-sm text-muted-foreground">Shree Kirana Management</p>
                 </div>
                 <ScrollArea className="h-[calc(100vh-120px)] p-4">
                   <NavLinks onNavigate={() => setMobileMenuOpen(false)} />
                   <div className="mt-6 pt-6 border-t space-y-2">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        navigate({ to: '/billing' });
-                        setMobileMenuOpen(false);
-                      }}
-                    >
-                      <CreditCard className="mr-2 h-5 w-5" />
-                      Billing Mode
-                    </Button>
                     <Button
                       variant="outline"
                       className="w-full justify-start"
@@ -112,21 +98,31 @@ export default function AdminLayout() {
               </div>
               <div className="hidden sm:block">
                 <h1 className="font-bold text-lg leading-none">Admin Panel</h1>
-                <p className="text-xs text-muted-foreground">Kirana Store Management</p>
+                <p className="text-xs text-muted-foreground">Shree Kirana Management</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate({ to: '/billing' })}
-              className="hidden md:flex"
-            >
-              <CreditCard className="mr-2 h-4 w-4" />
-              Billing
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Info className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  <p className="text-sm">
+                    <strong>Supported Login Options:</strong> Internet Identity (blockchain-based, passwordless), 
+                    Email+Password, and Email/Mobile+OTP.
+                    <br /><br />
+                    <strong>Note:</strong> Google, Facebook, and other social login options are not supported in this build.
+                    <br /><br />
+                    Admin access is role-based and assigned automatically to the configured bootstrap email.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Button
               variant="ghost"
               size="sm"

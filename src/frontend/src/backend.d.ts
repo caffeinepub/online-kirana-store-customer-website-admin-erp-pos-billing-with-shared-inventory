@@ -7,77 +7,66 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface ProductUnit {
-    id: bigint;
-    stockQty: bigint;
-    expiryDate?: Time;
-    createdAt: Time;
-    productId: bigint;
-    minStock: bigint;
-    price: bigint;
-    costPrice: bigint;
-    unitName: string;
-}
-export interface InventoryEntry {
-    qty: bigint;
-    expiryDate?: Time;
-    unitId: bigint;
-    minStock: bigint;
-    supplierId: bigint;
-}
 export type Time = bigint;
-export interface CustomerAccount {
-    id: bigint;
-    name: string;
-    email?: string;
-    mobile: string;
+export interface CartItem {
+    productId: bigint;
+    quantity: bigint;
 }
-export interface Supplier {
+export interface Order {
     id: bigint;
-    contact: string;
-    name: string;
-}
-export interface StaffAccount {
-    id: bigint;
-    contact: string;
-    name: string;
-    role: StaffRole;
+    status: string;
+    total: bigint;
+    userId: Principal;
+    timestamp: Time;
+    items: Array<CartItem>;
 }
 export interface UserProfile {
-    userType: Variant_customer_staff;
-    accountId?: bigint;
     name: string;
+    email: string;
+    address: string;
 }
-export enum StaffRole {
-    manager = "manager",
-    deliveryBoy = "deliveryBoy",
-    cashier = "cashier"
+export interface Product {
+    id: bigint;
+    name: string;
+    description: string;
+    stock: bigint;
+    imageUrl: string;
+    category: string;
+    price: bigint;
 }
 export enum UserRole {
     admin = "admin",
     user = "user",
     guest = "guest"
 }
-export enum Variant_customer_staff {
-    customer = "customer",
-    staff = "staff"
-}
 export interface backendInterface {
-    addInventoryEntry(entry: InventoryEntry): Promise<void>;
-    addProductUnit(productUnit: ProductUnit): Promise<void>;
-    addSupplier(supplier: Supplier): Promise<void>;
+    addAdminKey(publicKey: string): Promise<void>;
+    addProduct(product: Product): Promise<void>;
+    addToCart(productId: bigint, quantity: bigint): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    authenticateAdmin(providedPublicKey: string): Promise<boolean>;
+    clearCart(): Promise<void>;
+    deleteProduct(productId: bigint): Promise<void>;
+    getAllOrders(): Promise<Array<Order>>;
+    getAllProducts(): Promise<Array<Product>>;
+    getBootstrapAdminEmail(): Promise<string>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
-    getCustomerAccounts(): Promise<Array<CustomerAccount>>;
-    getInventory(): Promise<Array<InventoryEntry>>;
-    getMyCustomerAccount(): Promise<CustomerAccount | null>;
-    getProductUnits(): Promise<Array<ProductUnit>>;
-    getStaffAccounts(): Promise<Array<StaffAccount>>;
-    getSuppliers(): Promise<Array<Supplier>>;
+    getCart(): Promise<Array<CartItem>>;
+    getLowStockProducts(): Promise<Array<bigint>>;
+    getMyOrders(): Promise<Array<Order>>;
+    getOrder(orderId: bigint): Promise<Order | null>;
+    getProduct(productId: bigint): Promise<Product | null>;
+    getProductStock(productId: bigint): Promise<bigint>;
+    getProductsByCategory(category: string): Promise<Array<Product>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    registerCustomer(customer: CustomerAccount): Promise<void>;
-    registerStaff(staff: StaffAccount, principal: Principal): Promise<void>;
+    placeOrder(total: bigint): Promise<bigint>;
+    removeFromCart(productId: bigint): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setProductStock(productId: bigint, stock: bigint): Promise<void>;
+    setStockThreshold(productId: bigint, threshold: bigint): Promise<void>;
+    updateBootstrapAdminEmail(newEmail: string): Promise<void>;
+    updateOrderStatus(orderId: bigint, status: string): Promise<void>;
+    updateProduct(product: Product): Promise<void>;
 }

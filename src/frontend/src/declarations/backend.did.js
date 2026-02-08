@@ -8,165 +8,222 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const Time = IDL.Int;
-export const InventoryEntry = IDL.Record({
-  'qty' : IDL.Nat,
-  'expiryDate' : IDL.Opt(Time),
-  'unitId' : IDL.Nat,
-  'minStock' : IDL.Nat,
-  'supplierId' : IDL.Nat,
+export const _CaffeineStorageCreateCertificateResult = IDL.Record({
+  'method' : IDL.Text,
+  'blob_hash' : IDL.Text,
 });
-export const ProductUnit = IDL.Record({
-  'id' : IDL.Nat,
-  'stockQty' : IDL.Nat,
-  'expiryDate' : IDL.Opt(Time),
-  'createdAt' : Time,
-  'productId' : IDL.Nat,
-  'minStock' : IDL.Nat,
-  'price' : IDL.Nat,
-  'costPrice' : IDL.Nat,
-  'unitName' : IDL.Text,
+export const _CaffeineStorageRefillInformation = IDL.Record({
+  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
 });
-export const Supplier = IDL.Record({
+export const _CaffeineStorageRefillResult = IDL.Record({
+  'success' : IDL.Opt(IDL.Bool),
+  'topped_up_amount' : IDL.Opt(IDL.Nat),
+});
+export const Product = IDL.Record({
   'id' : IDL.Nat,
-  'contact' : IDL.Text,
   'name' : IDL.Text,
+  'description' : IDL.Text,
+  'stock' : IDL.Nat,
+  'imageUrl' : IDL.Text,
+  'category' : IDL.Text,
+  'price' : IDL.Nat,
 });
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const Time = IDL.Int;
+export const CartItem = IDL.Record({
+  'productId' : IDL.Nat,
+  'quantity' : IDL.Nat,
+});
+export const Order = IDL.Record({
+  'id' : IDL.Nat,
+  'status' : IDL.Text,
+  'total' : IDL.Nat,
+  'userId' : IDL.Principal,
+  'timestamp' : Time,
+  'items' : IDL.Vec(CartItem),
+});
 export const UserProfile = IDL.Record({
-  'userType' : IDL.Variant({ 'customer' : IDL.Null, 'staff' : IDL.Null }),
-  'accountId' : IDL.Opt(IDL.Nat),
   'name' : IDL.Text,
-});
-export const CustomerAccount = IDL.Record({
-  'id' : IDL.Nat,
-  'name' : IDL.Text,
-  'email' : IDL.Opt(IDL.Text),
-  'mobile' : IDL.Text,
-});
-export const StaffRole = IDL.Variant({
-  'manager' : IDL.Null,
-  'deliveryBoy' : IDL.Null,
-  'cashier' : IDL.Null,
-});
-export const StaffAccount = IDL.Record({
-  'id' : IDL.Nat,
-  'contact' : IDL.Text,
-  'name' : IDL.Text,
-  'role' : StaffRole,
+  'email' : IDL.Text,
+  'address' : IDL.Text,
 });
 
 export const idlService = IDL.Service({
+  '_caffeineStorageBlobIsLive' : IDL.Func(
+      [IDL.Vec(IDL.Nat8)],
+      [IDL.Bool],
+      ['query'],
+    ),
+  '_caffeineStorageBlobsToDelete' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
+  '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+      [IDL.Vec(IDL.Vec(IDL.Nat8))],
+      [],
+      [],
+    ),
+  '_caffeineStorageCreateCertificate' : IDL.Func(
+      [IDL.Text],
+      [_CaffeineStorageCreateCertificateResult],
+      [],
+    ),
+  '_caffeineStorageRefillCashier' : IDL.Func(
+      [IDL.Opt(_CaffeineStorageRefillInformation)],
+      [_CaffeineStorageRefillResult],
+      [],
+    ),
+  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'addInventoryEntry' : IDL.Func([InventoryEntry], [], []),
-  'addProductUnit' : IDL.Func([ProductUnit], [], []),
-  'addSupplier' : IDL.Func([Supplier], [], []),
+  'addAdminKey' : IDL.Func([IDL.Text], [], []),
+  'addProduct' : IDL.Func([Product], [], []),
+  'addToCart' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'authenticateAdmin' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'clearCart' : IDL.Func([], [], []),
+  'deleteProduct' : IDL.Func([IDL.Nat], [], []),
+  'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+  'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getBootstrapAdminEmail' : IDL.Func([], [IDL.Text], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-  'getCustomerAccounts' : IDL.Func([], [IDL.Vec(CustomerAccount)], ['query']),
-  'getInventory' : IDL.Func([], [IDL.Vec(InventoryEntry)], ['query']),
-  'getMyCustomerAccount' : IDL.Func([], [IDL.Opt(CustomerAccount)], ['query']),
-  'getProductUnits' : IDL.Func([], [IDL.Vec(ProductUnit)], ['query']),
-  'getStaffAccounts' : IDL.Func([], [IDL.Vec(StaffAccount)], ['query']),
-  'getSuppliers' : IDL.Func([], [IDL.Vec(Supplier)], ['query']),
+  'getCart' : IDL.Func([], [IDL.Vec(CartItem)], ['query']),
+  'getLowStockProducts' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
+  'getMyOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+  'getOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], ['query']),
+  'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
+  'getProductStock' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
+  'getProductsByCategory' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'registerCustomer' : IDL.Func([CustomerAccount], [], []),
-  'registerStaff' : IDL.Func([StaffAccount, IDL.Principal], [], []),
+  'placeOrder' : IDL.Func([IDL.Nat], [IDL.Nat], []),
+  'removeFromCart' : IDL.Func([IDL.Nat], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setProductStock' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+  'setStockThreshold' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+  'updateBootstrapAdminEmail' : IDL.Func([IDL.Text], [], []),
+  'updateOrderStatus' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+  'updateProduct' : IDL.Func([Product], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const Time = IDL.Int;
-  const InventoryEntry = IDL.Record({
-    'qty' : IDL.Nat,
-    'expiryDate' : IDL.Opt(Time),
-    'unitId' : IDL.Nat,
-    'minStock' : IDL.Nat,
-    'supplierId' : IDL.Nat,
+  const _CaffeineStorageCreateCertificateResult = IDL.Record({
+    'method' : IDL.Text,
+    'blob_hash' : IDL.Text,
   });
-  const ProductUnit = IDL.Record({
-    'id' : IDL.Nat,
-    'stockQty' : IDL.Nat,
-    'expiryDate' : IDL.Opt(Time),
-    'createdAt' : Time,
-    'productId' : IDL.Nat,
-    'minStock' : IDL.Nat,
-    'price' : IDL.Nat,
-    'costPrice' : IDL.Nat,
-    'unitName' : IDL.Text,
+  const _CaffeineStorageRefillInformation = IDL.Record({
+    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
   });
-  const Supplier = IDL.Record({
+  const _CaffeineStorageRefillResult = IDL.Record({
+    'success' : IDL.Opt(IDL.Bool),
+    'topped_up_amount' : IDL.Opt(IDL.Nat),
+  });
+  const Product = IDL.Record({
     'id' : IDL.Nat,
-    'contact' : IDL.Text,
     'name' : IDL.Text,
+    'description' : IDL.Text,
+    'stock' : IDL.Nat,
+    'imageUrl' : IDL.Text,
+    'category' : IDL.Text,
+    'price' : IDL.Nat,
   });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const Time = IDL.Int;
+  const CartItem = IDL.Record({ 'productId' : IDL.Nat, 'quantity' : IDL.Nat });
+  const Order = IDL.Record({
+    'id' : IDL.Nat,
+    'status' : IDL.Text,
+    'total' : IDL.Nat,
+    'userId' : IDL.Principal,
+    'timestamp' : Time,
+    'items' : IDL.Vec(CartItem),
+  });
   const UserProfile = IDL.Record({
-    'userType' : IDL.Variant({ 'customer' : IDL.Null, 'staff' : IDL.Null }),
-    'accountId' : IDL.Opt(IDL.Nat),
     'name' : IDL.Text,
-  });
-  const CustomerAccount = IDL.Record({
-    'id' : IDL.Nat,
-    'name' : IDL.Text,
-    'email' : IDL.Opt(IDL.Text),
-    'mobile' : IDL.Text,
-  });
-  const StaffRole = IDL.Variant({
-    'manager' : IDL.Null,
-    'deliveryBoy' : IDL.Null,
-    'cashier' : IDL.Null,
-  });
-  const StaffAccount = IDL.Record({
-    'id' : IDL.Nat,
-    'contact' : IDL.Text,
-    'name' : IDL.Text,
-    'role' : StaffRole,
+    'email' : IDL.Text,
+    'address' : IDL.Text,
   });
   
   return IDL.Service({
-    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'addInventoryEntry' : IDL.Func([InventoryEntry], [], []),
-    'addProductUnit' : IDL.Func([ProductUnit], [], []),
-    'addSupplier' : IDL.Func([Supplier], [], []),
-    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
-    'getCustomerAccounts' : IDL.Func([], [IDL.Vec(CustomerAccount)], ['query']),
-    'getInventory' : IDL.Func([], [IDL.Vec(InventoryEntry)], ['query']),
-    'getMyCustomerAccount' : IDL.Func(
-        [],
-        [IDL.Opt(CustomerAccount)],
+    '_caffeineStorageBlobIsLive' : IDL.Func(
+        [IDL.Vec(IDL.Nat8)],
+        [IDL.Bool],
         ['query'],
       ),
-    'getProductUnits' : IDL.Func([], [IDL.Vec(ProductUnit)], ['query']),
-    'getStaffAccounts' : IDL.Func([], [IDL.Vec(StaffAccount)], ['query']),
-    'getSuppliers' : IDL.Func([], [IDL.Vec(Supplier)], ['query']),
+    '_caffeineStorageBlobsToDelete' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
+        [IDL.Vec(IDL.Vec(IDL.Nat8))],
+        [],
+        [],
+      ),
+    '_caffeineStorageCreateCertificate' : IDL.Func(
+        [IDL.Text],
+        [_CaffeineStorageCreateCertificateResult],
+        [],
+      ),
+    '_caffeineStorageRefillCashier' : IDL.Func(
+        [IDL.Opt(_CaffeineStorageRefillInformation)],
+        [_CaffeineStorageRefillResult],
+        [],
+      ),
+    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
+    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addAdminKey' : IDL.Func([IDL.Text], [], []),
+    'addProduct' : IDL.Func([Product], [], []),
+    'addToCart' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'authenticateAdmin' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'clearCart' : IDL.Func([], [], []),
+    'deleteProduct' : IDL.Func([IDL.Nat], [], []),
+    'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+    'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getBootstrapAdminEmail' : IDL.Func([], [IDL.Text], ['query']),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getCart' : IDL.Func([], [IDL.Vec(CartItem)], ['query']),
+    'getLowStockProducts' : IDL.Func([], [IDL.Vec(IDL.Nat)], ['query']),
+    'getMyOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
+    'getOrder' : IDL.Func([IDL.Nat], [IDL.Opt(Order)], ['query']),
+    'getProduct' : IDL.Func([IDL.Nat], [IDL.Opt(Product)], ['query']),
+    'getProductStock' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
+    'getProductsByCategory' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(Product)],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'registerCustomer' : IDL.Func([CustomerAccount], [], []),
-    'registerStaff' : IDL.Func([StaffAccount, IDL.Principal], [], []),
+    'placeOrder' : IDL.Func([IDL.Nat], [IDL.Nat], []),
+    'removeFromCart' : IDL.Func([IDL.Nat], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setProductStock' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+    'setStockThreshold' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+    'updateBootstrapAdminEmail' : IDL.Func([IDL.Text], [], []),
+    'updateOrderStatus' : IDL.Func([IDL.Nat, IDL.Text], [], []),
+    'updateProduct' : IDL.Func([Product], [], []),
   });
 };
 

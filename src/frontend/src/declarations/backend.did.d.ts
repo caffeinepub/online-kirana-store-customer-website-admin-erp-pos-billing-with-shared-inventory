@@ -10,69 +10,90 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface CustomerAccount {
+export interface CartItem { 'productId' : bigint, 'quantity' : bigint }
+export interface Order {
+  'id' : bigint,
+  'status' : string,
+  'total' : bigint,
+  'userId' : Principal,
+  'timestamp' : Time,
+  'items' : Array<CartItem>,
+}
+export interface Product {
   'id' : bigint,
   'name' : string,
-  'email' : [] | [string],
-  'mobile' : string,
-}
-export interface InventoryEntry {
-  'qty' : bigint,
-  'expiryDate' : [] | [Time],
-  'unitId' : bigint,
-  'minStock' : bigint,
-  'supplierId' : bigint,
-}
-export interface ProductUnit {
-  'id' : bigint,
-  'stockQty' : bigint,
-  'expiryDate' : [] | [Time],
-  'createdAt' : Time,
-  'productId' : bigint,
-  'minStock' : bigint,
+  'description' : string,
+  'stock' : bigint,
+  'imageUrl' : string,
+  'category' : string,
   'price' : bigint,
-  'costPrice' : bigint,
-  'unitName' : string,
 }
-export interface StaffAccount {
-  'id' : bigint,
-  'contact' : string,
-  'name' : string,
-  'role' : StaffRole,
-}
-export type StaffRole = { 'manager' : null } |
-  { 'deliveryBoy' : null } |
-  { 'cashier' : null };
-export interface Supplier { 'id' : bigint, 'contact' : string, 'name' : string }
 export type Time = bigint;
 export interface UserProfile {
-  'userType' : { 'customer' : null } |
-    { 'staff' : null },
-  'accountId' : [] | [bigint],
   'name' : string,
+  'email' : string,
+  'address' : string,
 }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface _CaffeineStorageCreateCertificateResult {
+  'method' : string,
+  'blob_hash' : string,
+}
+export interface _CaffeineStorageRefillInformation {
+  'proposed_top_up_amount' : [] | [bigint],
+}
+export interface _CaffeineStorageRefillResult {
+  'success' : [] | [boolean],
+  'topped_up_amount' : [] | [bigint],
+}
 export interface _SERVICE {
+  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
+  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
+  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
+    [Array<Uint8Array>],
+    undefined
+  >,
+  '_caffeineStorageCreateCertificate' : ActorMethod<
+    [string],
+    _CaffeineStorageCreateCertificateResult
+  >,
+  '_caffeineStorageRefillCashier' : ActorMethod<
+    [[] | [_CaffeineStorageRefillInformation]],
+    _CaffeineStorageRefillResult
+  >,
+  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'addInventoryEntry' : ActorMethod<[InventoryEntry], undefined>,
-  'addProductUnit' : ActorMethod<[ProductUnit], undefined>,
-  'addSupplier' : ActorMethod<[Supplier], undefined>,
+  'addAdminKey' : ActorMethod<[string], undefined>,
+  'addProduct' : ActorMethod<[Product], undefined>,
+  'addToCart' : ActorMethod<[bigint, bigint], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'authenticateAdmin' : ActorMethod<[string], boolean>,
+  'clearCart' : ActorMethod<[], undefined>,
+  'deleteProduct' : ActorMethod<[bigint], undefined>,
+  'getAllOrders' : ActorMethod<[], Array<Order>>,
+  'getAllProducts' : ActorMethod<[], Array<Product>>,
+  'getBootstrapAdminEmail' : ActorMethod<[], string>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
-  'getCustomerAccounts' : ActorMethod<[], Array<CustomerAccount>>,
-  'getInventory' : ActorMethod<[], Array<InventoryEntry>>,
-  'getMyCustomerAccount' : ActorMethod<[], [] | [CustomerAccount]>,
-  'getProductUnits' : ActorMethod<[], Array<ProductUnit>>,
-  'getStaffAccounts' : ActorMethod<[], Array<StaffAccount>>,
-  'getSuppliers' : ActorMethod<[], Array<Supplier>>,
+  'getCart' : ActorMethod<[], Array<CartItem>>,
+  'getLowStockProducts' : ActorMethod<[], Array<bigint>>,
+  'getMyOrders' : ActorMethod<[], Array<Order>>,
+  'getOrder' : ActorMethod<[bigint], [] | [Order]>,
+  'getProduct' : ActorMethod<[bigint], [] | [Product]>,
+  'getProductStock' : ActorMethod<[bigint], bigint>,
+  'getProductsByCategory' : ActorMethod<[string], Array<Product>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'registerCustomer' : ActorMethod<[CustomerAccount], undefined>,
-  'registerStaff' : ActorMethod<[StaffAccount, Principal], undefined>,
+  'placeOrder' : ActorMethod<[bigint], bigint>,
+  'removeFromCart' : ActorMethod<[bigint], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setProductStock' : ActorMethod<[bigint, bigint], undefined>,
+  'setStockThreshold' : ActorMethod<[bigint, bigint], undefined>,
+  'updateBootstrapAdminEmail' : ActorMethod<[string], undefined>,
+  'updateOrderStatus' : ActorMethod<[bigint, string], undefined>,
+  'updateProduct' : ActorMethod<[Product], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

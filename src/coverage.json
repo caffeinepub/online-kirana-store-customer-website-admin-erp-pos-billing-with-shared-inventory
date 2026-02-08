@@ -1,334 +1,59 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T12:06:16.408Z",
+  "generatedAt": "2026-02-08T15:00:04.443Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 13,
-    "implemented": 12,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-1",
-        "summary": "Implement core backend data models and APIs in the single Motoko actor for a dry-grocery kirana store: products (variants/units), suppliers, inventory (including min-stock threshold, expiry date, and damaged stock), customers, staff accounts with roles/permissions, carts, online orders (with status history), offline POS sales, returns, and refunds.",
+        "id": "REQ-45",
+        "summary": "Identify and fix the root cause(s) of the Version 7 production go-live (publish) failure by performing a full frontend + backend build pass and resolving any compile/build/runtime-blocking errors with minimal, stability-focused changes.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/backend.d.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/pages/auth/LoginPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/pages/auth/LoginPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-46",
+        "summary": "Audit routing/guard/redirect logic to ensure no navigation occurs during render and that redirects are handled in effects (or equivalent safe patterns) to prevent runtime crashes during deployment/first load.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/pages/auth/LoginPage.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/App.tsx",
+          "frontend/src/pages/auth/LoginPage.tsx"
+        ]
+      },
+      {
+        "id": "REQ-47",
+        "summary": "Verify backend authorization/bootstrap-admin logic builds and behaves correctly in a clean deployment so that admin gating does not cause traps/errors during app initialization (e.g., role/profile queries).",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
-      },
-      {
-        "id": "REQ-10",
-        "summary": "Create Admin dashboard analytics combining online orders and offline POS sales: online+offline sales totals, cash vs UPI breakdown, profit (based on cost vs selling price), stock alerts, top selling items, and expiry warnings.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/admin/DashboardPage.tsx",
-          "frontend/src/hooks/useAnalytics.ts",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/admin/DashboardPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-11",
-        "summary": "Implement AI-style insights as on-device/back-end deterministic analytics (no external AI services): demand forecasting (e.g., moving average), reorder suggestions (based on forecast + lead time + min stock), smart pricing suggestions (rule-based), fraud/anomaly flags (e.g., unusual discounts/refunds), and dead stock alerts (no sales for N days).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/admin/InsightsPage.tsx",
-          "frontend/src/lib/insightsRules.ts",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-12",
-        "summary": "Implement dark mode and light mode across customer site, Admin ERP, and Billing Mode, with a clean kirana-style UI and consistently large, touch-friendly controls.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useTheme.ts",
-          "frontend/index.css",
-          "frontend/src/components/ThemeToggle.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/index.css",
-          "frontend/src/components/ThemeToggle.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-13",
-        "summary": "Establish a coherent, distinct visual theme for the entire app (customer + admin + billing) with a kirana-market aesthetic (avoid blue/purple): define color palette, typography, spacing, and component usage guidelines and apply consistently.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/index.css",
-          "frontend/tailwind.config.js",
-          "frontend/src/components/KiranaBrandHeader.tsx",
-          "frontend/src/App.tsx",
-          "frontend/public/assets/generated/kirana-logo.dim_512x512.png",
-          "frontend/public/assets/generated/hero-banner.dim_1600x600.png",
-          "frontend/public/assets/generated/categories-icons-sprite.dim_1024x1024.png",
-          "frontend/src/pages/customer/CatalogPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/index.css",
-          "frontend/tailwind.config.js",
-          "frontend/src/components/KiranaBrandHeader.tsx",
-          "frontend/src/App.tsx",
-          "frontend/public/assets/generated/kirana-logo.dim_512x512.png",
-          "frontend/public/assets/generated/hero-banner.dim_1600x600.png",
-          "frontend/public/assets/generated/categories-icons-sprite.dim_1024x1024.png",
-          "frontend/src/pages/customer/CatalogPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Build a mobile-first customer storefront: browse/search dry-grocery catalog, product details, add-to-cart, checkout, view order history, and track order status.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/customer/CatalogPage.tsx",
-          "frontend/src/pages/customer/ProductDetailPage.tsx",
-          "frontend/src/pages/customer/CartCheckoutPage.tsx",
-          "frontend/src/pages/customer/OrdersPage.tsx",
-          "frontend/src/pages/customer/OrderDetailPage.tsx",
-          "frontend/src/state/cartStore.ts",
-          "frontend/src/hooks/useCatalog.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx",
-          "frontend/src/pages/customer/CatalogPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Add authentication flows for customers and staff accounts, supporting: register with mobile number or email, OTP verification, login via OTP or password, and password reset via OTP; enforce role-based access for Admin ERP staff roles (cashier, delivery boy, manager).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useAuth.ts",
-          "frontend/src/components/auth/LoginButton.tsx",
-          "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "frontend/src/components/auth/OtpFlowScreens.tsx",
-          "frontend/src/components/auth/ProtectedRoute.tsx",
-          "frontend/src/components/auth/AccessDeniedScreen.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/auth/LoginButton.tsx",
-          "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "frontend/src/components/auth/AccessDeniedScreen.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Implement shared inventory synchronization between online orders and offline POS sales so that stock changes in one channel are visible in the other; provide near-real-time updates in the UI via polling/refresh patterns.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/refreshPolicy.ts",
-          "frontend/src/hooks/useInventory.ts",
-          "frontend/src/pages/customer/CartCheckoutPage.tsx",
-          "frontend/src/pages/admin/InventoryPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/admin/InventoryPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Create an Admin ERP web app area with: product management (add/edit), supplier-wise stock management, min stock alert configuration, expiry tracking, damaged stock recording, and inventory list views.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/admin/AdminLayout.tsx",
-          "frontend/src/pages/admin/ProductsPage.tsx",
-          "frontend/src/pages/admin/SuppliersPage.tsx",
-          "frontend/src/pages/admin/InventoryPage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/admin/AdminLayout.tsx",
-          "frontend/src/pages/admin/ProductsPage.tsx",
-          "frontend/src/pages/admin/SuppliersPage.tsx",
-          "frontend/src/pages/admin/InventoryPage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Add Excel (.xlsx) import/export tools in Admin ERP for stock/products: upload an .xlsx to bulk create/update products and inventory; download current stock/export reports.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/admin/ImportExportPage.tsx",
-          "frontend/src/lib/xlsx.ts",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-7",
-        "summary": "Implement Admin “Billing Mode” (phone-based POS) optimized for Android browsers: product search, quantity entry, add to bill, apply discount, select payment method (Cash/UPI), and complete sale; on completion, save the sale and deduct stock from the shared inventory.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/billing/BillingModePage.tsx",
-          "frontend/src/state/billingStore.ts",
-          "frontend/src/pages/billing/BillingModePage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/billing/BillingModePage.tsx",
-          "frontend/src/pages/billing/BillingModePage.tsx",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-8",
-        "summary": "Implement order management workflows in Admin ERP: accept/reject orders, update statuses (placed/packed/out for delivery/delivered/cancelled/refunded), assign delivery staff, track assigned orders, approve returns, and process refunds.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/admin/OrdersPage.tsx",
-          "frontend/src/pages/admin/OrderAdminDetailPage.tsx",
-          "frontend/src/pages/delivery/MyDeliveriesPage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
-        "id": "REQ-9",
-        "summary": "Add notification event logging for order status changes and key admin alerts: new order, low stock, and high value order; expose views in Admin ERP and customer order pages showing the notification history.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/admin/AlertsPage.tsx",
-          "frontend/src/pages/customer/OrderDetailPage.tsx",
-          "frontend/src/pages/admin/OrderAdminDetailPage.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/App.tsx"
-        ]
       }
     ]
   },
   "changedFiles": [
-    "backend/authorization/MixinAuthorization.mo",
-    "backend/authorization/access-control.mo",
     "backend/main.mo",
     "build-request.json",
-    "build-template/Dockerfile",
-    "build-template/LICENSE",
-    "build-template/README.md",
-    "build-template/deploy.sh",
-    "build-template/icp.yaml",
-    "build-template/package.json",
-    "build-template/pnpm-lock.yaml",
-    "build-template/pnpm-workspace.yaml",
-    "build-template/scripts/prune-unused-images.js",
-    "build-template/scripts/resize-images.js",
-    "build-template/src/backend/canister.yaml",
-    "build-template/src/backend/system-idl/aaaaa-aa.did",
-    "build-template/src/frontend/canister.yaml",
-    "build-template/src/frontend/components.json",
-    "build-template/src/frontend/env.json",
-    "build-template/src/frontend/eslint-rules/no-bigint-in-query-keys.js",
-    "build-template/src/frontend/eslint-rules/require-internet-identity-provider.js",
-    "build-template/src/frontend/eslint.config.js",
-    "build-template/src/frontend/package.json",
-    "build-template/src/frontend/postcss.config.js",
-    "build-template/src/frontend/src/components/ui/accordion.tsx",
-    "build-template/src/frontend/src/components/ui/alert-dialog.tsx",
-    "build-template/src/frontend/src/components/ui/alert.tsx",
-    "build-template/src/frontend/src/components/ui/aspect-ratio.tsx",
-    "build-template/src/frontend/src/components/ui/avatar.tsx",
-    "build-template/src/frontend/src/components/ui/badge.tsx",
-    "build-template/src/frontend/src/components/ui/breadcrumb.tsx",
-    "build-template/src/frontend/src/components/ui/button.tsx",
-    "build-template/src/frontend/src/components/ui/calendar.tsx",
-    "build-template/src/frontend/src/components/ui/card.tsx",
-    "build-template/src/frontend/src/components/ui/carousel.tsx",
-    "build-template/src/frontend/src/components/ui/chart.tsx",
-    "build-template/src/frontend/src/components/ui/checkbox.tsx",
-    "build-template/src/frontend/src/components/ui/collapsible.tsx",
-    "build-template/src/frontend/src/components/ui/command.tsx",
-    "build-template/src/frontend/src/components/ui/context-menu.tsx",
-    "build-template/src/frontend/src/components/ui/dialog.tsx",
-    "build-template/src/frontend/src/components/ui/drawer.tsx",
-    "build-template/src/frontend/src/components/ui/dropdown-menu.tsx",
-    "build-template/src/frontend/src/components/ui/form.tsx",
-    "build-template/src/frontend/src/components/ui/hover-card.tsx",
-    "build-template/src/frontend/src/components/ui/input-otp.tsx",
-    "build-template/src/frontend/src/components/ui/input.tsx",
-    "build-template/src/frontend/src/components/ui/label.tsx",
-    "build-template/src/frontend/src/components/ui/menubar.tsx",
-    "build-template/src/frontend/src/components/ui/navigation-menu.tsx",
-    "build-template/src/frontend/src/components/ui/pagination.tsx",
-    "build-template/src/frontend/src/components/ui/popover.tsx",
-    "build-template/src/frontend/src/components/ui/progress.tsx",
-    "build-template/src/frontend/src/components/ui/radio-group.tsx",
-    "build-template/src/frontend/src/components/ui/resizable.tsx",
-    "build-template/src/frontend/src/components/ui/scroll-area.tsx",
-    "build-template/src/frontend/src/components/ui/select.tsx",
-    "build-template/src/frontend/src/components/ui/separator.tsx",
-    "build-template/src/frontend/src/components/ui/sheet.tsx",
-    "build-template/src/frontend/src/components/ui/sidebar.tsx",
-    "build-template/src/frontend/src/components/ui/skeleton.tsx",
-    "build-template/src/frontend/src/components/ui/slider.tsx",
-    "build-template/src/frontend/src/components/ui/sonner.tsx",
-    "build-template/src/frontend/src/components/ui/switch.tsx",
-    "build-template/src/frontend/src/components/ui/table.tsx",
-    "build-template/src/frontend/src/components/ui/tabs.tsx",
-    "build-template/src/frontend/src/components/ui/textarea.tsx",
-    "build-template/src/frontend/src/components/ui/toggle-group.tsx",
-    "build-template/src/frontend/src/components/ui/toggle.tsx",
-    "build-template/src/frontend/src/components/ui/tooltip.tsx",
-    "build-template/src/frontend/src/hooks/use-mobile.tsx",
-    "build-template/src/frontend/src/lib/utils.ts",
-    "build-template/src/frontend/tsconfig.json",
-    "build-template/src/frontend/vite.config.js",
-    "build-template/tsconfig.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/index.css",
-    "frontend/index.html",
-    "frontend/public/assets/generated/categories-icons-sprite.dim_1024x1024.png",
-    "frontend/public/assets/generated/hero-banner.dim_1600x600.png",
-    "frontend/public/assets/generated/kirana-logo.dim_512x512.png",
     "frontend/src/App.tsx",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/KiranaBrandHeader.tsx",
-    "frontend/src/components/ThemeToggle.tsx",
-    "frontend/src/components/auth/AccessDeniedScreen.tsx",
-    "frontend/src/components/auth/LoginButton.tsx",
-    "frontend/src/components/auth/ProfileSetupDialog.tsx",
-    "frontend/src/config.ts",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useActor.ts",
-    "frontend/src/hooks/useInternetIdentity.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/index.css",
-    "frontend/src/main.tsx",
-    "frontend/src/pages/admin/AdminLayout.tsx",
-    "frontend/src/pages/admin/DashboardPage.tsx",
-    "frontend/src/pages/admin/InventoryPage.tsx",
-    "frontend/src/pages/admin/ProductsPage.tsx",
-    "frontend/src/pages/admin/StaffPage.tsx",
-    "frontend/src/pages/admin/SuppliersPage.tsx",
-    "frontend/src/pages/billing/BillingModePage.tsx",
-    "frontend/src/pages/customer/CatalogPage.tsx",
-    "frontend/src/ui-summary.json",
-    "frontend/src/utils/StorageClient.ts",
-    "frontend/src/utils/urlParams.ts",
-    "frontend/tailwind.config.js",
+    "frontend/src/pages/auth/LoginPage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

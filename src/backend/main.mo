@@ -1,98 +1,90 @@
 import Array "mo:core/Array";
+import Time "mo:core/Time";
 import List "mo:core/List";
 import Map "mo:core/Map";
-import Order "mo:core/Order";
-import Iter "mo:core/Iter";
-import Text "mo:core/Text";
-import Time "mo:core/Time";
 import Nat "mo:core/Nat";
-import Runtime "mo:core/Runtime";
-import Principal "mo:core/Principal";
 import Set "mo:core/Set";
+import Text "mo:core/Text";
+import Iter "mo:core/Iter";
+import Runtime "mo:core/Runtime";
+import Char "mo:core/Char";
+import Principal "mo:core/Principal";
 
+import MixinStorage "blob-storage/Mixin";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
 actor {
-  public type ProductUnit = {
+  include MixinStorage();
+
+  public type Product = {
     id : Nat;
-    productId : Nat;
-    unitName : Text;
+    name : Text;
+    description : Text;
+    category : Text;
     price : Nat;
-    costPrice : Nat;
-    stockQty : Nat;
-    minStock : Nat;
-    expiryDate : ?Time.Time;
-    createdAt : Time.Time;
+    stock : Nat;
+    imageUrl : Text;
   };
 
-  module ProductUnit {
-    public func compare(p1 : ProductUnit, p2 : ProductUnit) : Order.Order {
-      Nat.compare(p1.id, p2.id);
-    };
+  public type CartItem = {
+    productId : Nat;
+    quantity : Nat;
   };
 
-  public type Supplier = {
+  public type Order = {
     id : Nat;
-    name : Text;
-    contact : Text;
-  };
-
-  public type InventoryEntry = {
-    unitId : Nat;
-    qty : Nat;
-    minStock : Nat;
-    expiryDate : ?Time.Time;
-    supplierId : Nat;
-  };
-
-  public type StaffRole = {
-    #cashier;
-    #deliveryBoy;
-    #manager;
-  };
-
-  public type StaffAccount = {
-    id : Nat;
-    name : Text;
-    role : StaffRole;
-    contact : Text;
-  };
-
-  public type CustomerAccount = {
-    id : Nat;
-    name : Text;
-    mobile : Text;
-    email : ?Text;
+    userId : Principal;
+    items : [CartItem];
+    total : Nat;
+    status : Text;
+    timestamp : Time.Time;
   };
 
   public type UserProfile = {
     name : Text;
-    userType : { #customer; #staff };
-    accountId : ?Nat;
+    email : Text;
+    address : Text;
   };
 
-  module CustomerAccount {
-    public func compareByName(a1 : CustomerAccount, a2 : CustomerAccount) : Order.Order {
-      Text.compare(a1.name, a2.name);
-    };
-  };
+  let products = Map.empty<Nat, Product>();
+  let productStocks = Map.empty<Nat, Nat>();
+  let stockThresholds = Map.empty<Nat, Nat>();
+  let userCarts = Map.empty<Principal, [CartItem]>();
+  let orders = Map.empty<Nat, Order>();
+  var nextOrderId : Nat = 1;
+
+  let userProfiles = Map.empty<Principal, UserProfile>();
+
+  let adminPublicKeys = Set.empty<Text>();
 
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  let productUnits = Map.empty<Nat, ProductUnit>();
-  let suppliers = Map.empty<Nat, Supplier>();
-  let inventory = Map.empty<Nat, InventoryEntry>();
-  let staffAccounts = Map.empty<Nat, StaffAccount>();
-  let customerAccounts = Map.empty<Nat, CustomerAccount>();
-  let userProfiles = Map.empty<Principal, UserProfile>();
-  let principalToCustomerId = Map.empty<Principal, Nat>();
-  let principalToStaffId = Map.empty<Principal, Nat>();
+  let defaultAdminKeys = [
+    "a25536229ee0fe395b3ed77f72f1b279972d8b4787ceebfad977784b62bede6b",
+    "b66571589ee0fe395b3ed77f72f1b279972d8b4787ceebfad977784b"
+  ];
 
-  // User Profile Management (Required by frontend)
+  for (key in defaultAdminKeys.vals()) {
+    adminPublicKeys.add(key);
+  };
+
+  var bootstrapAdminEmail : Text = "jogoshree@gmail.com";
+
+  func normalizeEmail(email : Text) : Text {
+    let trimmed = email.trim(#char(' '));
+    trimmed.map(func(c : Char) : Char {
+      if (c >= 'A' and c <= 'Z') {
+        Char.fromNat32(c.toNat32() + 32);
+      } else {
+        c;
+      };
+    });
+  };
+
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can view profiles");
     };
     userProfiles.get(caller);
@@ -106,184 +98,277 @@ actor {
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.add(caller, profile);
+
+    let normalizedProfileEmail = normalizeEmail(profile.email);
+    let normalizedBootstrapEmail = normalizeEmail(bootstrapAdminEmail);
+
+    if (Text.equal(normalizedProfileEmail, normalizedBootstrapEmail) and not AccessControl.isAdmin(accessControlState, caller)) {
+      AccessControl.assignRole(accessControlState, caller, caller, #admin);
+    };
   };
 
-  // Product Management - Admin only
-  public shared ({ caller }) func addProductUnit(productUnit : ProductUnit) : async () {
+  public shared ({ caller }) func authenticateAdmin(providedPublicKey : Text) : async Bool {
+    if (adminPublicKeys.contains(providedPublicKey)) {
+      if (not AccessControl.isAdmin(accessControlState, caller)) {
+        AccessControl.assignRole(accessControlState, caller, caller, #admin);
+      };
+      true;
+    } else {
+      false;
+    };
+  };
+
+  public shared ({ caller }) func addAdminKey(publicKey : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can grant admin privileges");
+    };
+    adminPublicKeys.add(publicKey);
+  };
+
+  public shared ({ caller }) func updateBootstrapAdminEmail(newEmail : Text) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can update bootstrap admin email");
+    };
+    bootstrapAdminEmail := normalizeEmail(newEmail);
+  };
+
+  public query ({ caller }) func getBootstrapAdminEmail() : async Text {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can view bootstrap admin email");
+    };
+    bootstrapAdminEmail;
+  };
+
+  public shared ({ caller }) func addProduct(product : Product) : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
       Runtime.trap("Unauthorized: Only admins can add products");
     };
-    productUnits.add(productUnit.id, productUnit);
+    products.add(product.id, product);
   };
 
-  // Supplier Management - Admin only
-  public shared ({ caller }) func addSupplier(supplier : Supplier) : async () {
+  public shared ({ caller }) func updateProduct(product : Product) : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can add suppliers");
+      Runtime.trap("Unauthorized: Only admins can update products");
     };
-    suppliers.add(supplier.id, supplier);
+    products.add(product.id, product);
   };
 
-  // Inventory Management - Admin only
-  public shared ({ caller }) func addInventoryEntry(entry : InventoryEntry) : async () {
+  public shared ({ caller }) func deleteProduct(productId : Nat) : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can add inventory");
+      Runtime.trap("Unauthorized: Only admins can delete products");
     };
-    inventory.add(entry.unitId, entry);
+    products.remove(productId);
   };
 
-  // Customer Registration - Self-registration for authenticated users
-  public shared ({ caller }) func registerCustomer(customer : CustomerAccount) : async () {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can register as customers");
+  public shared ({ caller }) func setStockThreshold(productId : Nat, threshold : Nat) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can set stock thresholds");
     };
-    
-    // Prevent duplicate registration
-    switch (principalToCustomerId.get(caller)) {
-      case (?existingId) {
-        Runtime.trap("Already registered as customer");
+    stockThresholds.add(productId, threshold);
+  };
+
+  public shared ({ caller }) func setProductStock(productId : Nat, stock : Nat) : async () {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can set product stock");
+    };
+    productStocks.add(productId, stock);
+  };
+
+  public query ({ caller }) func getProductStock(productId : Nat) : async Nat {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can view product stock");
+    };
+    switch (productStocks.get(productId)) {
+      case (?stock) { stock };
+      case (null) { 0 };
+    };
+  };
+
+  public query ({ caller }) func getLowStockProducts() : async [Nat] {
+    if (not AccessControl.isAdmin(accessControlState, caller)) {
+      Runtime.trap("Unauthorized: Only admins can view low stock products");
+    };
+
+    let lowStockList = List.empty<Nat>();
+
+    for ((productId, threshold) in stockThresholds.entries()) {
+      let stock = switch (productStocks.get(productId)) {
+        case (?qty) { qty };
+        case (null) { 0 };
       };
-      case null {
-        customerAccounts.add(customer.id, customer);
-        principalToCustomerId.add(caller, customer.id);
-        
-        // Update user profile
-        let profile : UserProfile = {
-          name = customer.name;
-          userType = #customer;
-          accountId = ?customer.id;
+
+      if (stock <= threshold) {
+        lowStockList.add(productId);
+      };
+    };
+
+    lowStockList.toArray();
+  };
+
+  public query func getAllProducts() : async [Product] {
+    let productsIter = products.values();
+    productsIter.toArray();
+  };
+
+  public query func getProduct(productId : Nat) : async ?Product {
+    products.get(productId);
+  };
+
+  public query func getProductsByCategory(category : Text) : async [Product] {
+    let productsIter = products.entries();
+    let filteredProducts = productsIter.filter(
+      func((_, p)) { p.category == category }
+    );
+    filteredProducts.toArray().map(func((_, p)) { p });
+  };
+
+  public shared ({ caller }) func addToCart(productId : Nat, quantity : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can add to cart");
+    };
+
+    let currentCart = switch (userCarts.get(caller)) {
+      case (?cart) { cart };
+      case (null) { [] };
+    };
+
+    let newItem : CartItem = { productId; quantity };
+    let updatedCart = currentCart.concat([newItem]);
+    userCarts.add(caller, updatedCart);
+  };
+
+  public shared ({ caller }) func removeFromCart(productId : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can remove from cart");
+    };
+
+    let currentCart = switch (userCarts.get(caller)) {
+      case (?cart) { cart };
+      case (null) { [] };
+    };
+
+    let updatedCart = currentCart.filter(func(item : CartItem) : Bool {
+      item.productId != productId;
+    });
+    userCarts.add(caller, updatedCart);
+  };
+
+  public query ({ caller }) func getCart() : async [CartItem] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view cart");
+    };
+
+    switch (userCarts.get(caller)) {
+      case (?cart) { cart };
+      case (null) { [] };
+    };
+  };
+
+  public shared ({ caller }) func clearCart() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can clear cart");
+    };
+    userCarts.add(caller, []);
+  };
+
+  public shared ({ caller }) func placeOrder(total : Nat) : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can place orders");
+    };
+
+    let cart = switch (userCarts.get(caller)) {
+      case (?c) { c };
+      case (null) { Runtime.trap("Cart is empty") };
+    };
+
+    if (cart.size() == 0) {
+      Runtime.trap("Cart is empty");
+    };
+
+    let orderId = nextOrderId;
+    nextOrderId += 1;
+
+    let order : Order = {
+      id = orderId;
+      userId = caller;
+      items = cart;
+      total;
+      status = "pending";
+      timestamp = Time.now();
+    };
+
+    orders.add(orderId, order);
+    userCarts.add(caller, []);
+
+    orderId;
+  };
+
+  public query ({ caller }) func getOrder(orderId : Nat) : async ?Order {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view orders");
+    };
+
+    switch (orders.get(orderId)) {
+      case (?order) {
+        if (order.userId == caller or AccessControl.isAdmin(accessControlState, caller)) {
+          ?order;
+        } else {
+          Runtime.trap("Unauthorized: Can only view your own orders");
         };
-        userProfiles.add(caller, profile);
       };
+      case (null) { null };
     };
   };
 
-  // Staff Registration - Admin only
-  public shared ({ caller }) func registerStaff(staff : StaffAccount, principal : Principal) : async () {
+  public query ({ caller }) func getMyOrders() : async [Order] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view orders");
+    };
+
+    let ordersIter = orders.entries();
+    let filtered = ordersIter.filter(
+      func((_, o)) {
+        o.userId == caller;
+      }
+    ).toArray();
+
+    filtered.map(func((_, o)) { o });
+  };
+
+  public query ({ caller }) func getAllOrders() : async [Order] {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can add staff");
+      Runtime.trap("Unauthorized: Only admins can view all orders");
     };
-    
-    staffAccounts.add(staff.id, staff);
-    principalToStaffId.add(principal, staff.id);
-    
-    // Update user profile for staff
-    let profile : UserProfile = {
-      name = staff.name;
-      userType = #staff;
-      accountId = ?staff.id;
-    };
-    userProfiles.add(principal, profile);
+
+    let ordersIter = orders.entries();
+    let entriesArray = ordersIter.toArray();
+    entriesArray.map(func((_, o)) { o });
   };
 
-  // Query Functions with Authorization
-
-  // Products - Admin and staff can view
-  public query ({ caller }) func getProductUnits() : async [ProductUnit] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can view products");
-    };
-    
-    // Check if user is admin or staff
-    let isStaff = switch (principalToStaffId.get(caller)) {
-      case (?_) true;
-      case null false;
-    };
-    
-    if (not (AccessControl.isAdmin(accessControlState, caller) or isStaff)) {
-      Runtime.trap("Unauthorized: Only admins and staff can view product details");
-    };
-    
-    productUnits.values().toArray().sort();
-  };
-
-  // Suppliers - Admin only
-  public query ({ caller }) func getSuppliers() : async [Supplier] {
+  public shared ({ caller }) func updateOrderStatus(orderId : Nat, status : Text) : async () {
     if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view suppliers");
+      Runtime.trap("Unauthorized: Only admins can update order status");
     };
-    suppliers.values().toArray();
-  };
 
-  // Inventory - Admin and staff can view
-  public query ({ caller }) func getInventory() : async [InventoryEntry] {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can view inventory");
-    };
-    
-    // Check if user is admin or staff
-    let isStaff = switch (principalToStaffId.get(caller)) {
-      case (?_) true;
-      case null false;
-    };
-    
-    if (not (AccessControl.isAdmin(accessControlState, caller) or isStaff)) {
-      Runtime.trap("Unauthorized: Only admins and staff can view inventory");
-    };
-    
-    inventory.values().toArray();
-  };
-
-  // Staff Accounts - Admin only
-  public query ({ caller }) func getStaffAccounts() : async [StaffAccount] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view staff accounts");
-    };
-    staffAccounts.values().toArray();
-  };
-
-  // Customer Accounts - Admin only (privacy protection)
-  public query ({ caller }) func getCustomerAccounts() : async [CustomerAccount] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view all customer accounts");
-    };
-    customerAccounts.values().toArray().sort(CustomerAccount.compareByName);
-  };
-
-  // Get own customer account
-  public query ({ caller }) func getMyCustomerAccount() : async ?CustomerAccount {
-    if (not AccessControl.hasPermission(accessControlState, caller, #user)) {
-      Runtime.trap("Unauthorized: Only authenticated users can view their account");
-    };
-    
-    switch (principalToCustomerId.get(caller)) {
-      case (?customerId) {
-        customerAccounts.get(customerId);
-      };
-      case null null;
-    };
-  };
-
-  // Helper function to check if caller is staff with specific role
-  private func isStaffWithRole(caller : Principal, requiredRole : StaffRole) : Bool {
-    switch (principalToStaffId.get(caller)) {
-      case (?staffId) {
-        switch (staffAccounts.get(staffId)) {
-          case (?staff) {
-            switch (staff.role, requiredRole) {
-              case (#cashier, #cashier) true;
-              case (#deliveryBoy, #deliveryBoy) true;
-              case (#manager, #manager) true;
-              case (#manager, _) true; // Managers have all staff permissions
-              case _ false;
-            };
-          };
-          case null false;
+    switch (orders.get(orderId)) {
+      case (?order) {
+        let updatedOrder : Order = {
+          id = order.id;
+          userId = order.userId;
+          items = order.items;
+          total = order.total;
+          status;
+          timestamp = order.timestamp;
         };
+        orders.add(orderId, updatedOrder);
       };
-      case null false;
-    };
-  };
-
-  // Helper function to check if caller is any staff member
-  private func isStaff(caller : Principal) : Bool {
-    switch (principalToStaffId.get(caller)) {
-      case (?_) true;
-      case null false;
+      case (null) {
+        Runtime.trap("Order not found");
+      };
     };
   };
 };

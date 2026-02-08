@@ -1,19 +1,26 @@
-import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet } from '@tanstack/react-router';
+import { RouterProvider, createRouter, createRoute, createRootRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import { useInternetIdentity } from './hooks/useInternetIdentity';
-import { useGetCallerUserProfile } from './hooks/useQueries';
+import { useGetCallerUserProfile, useGetCallerUserRole } from './hooks/useQueries';
 import ProfileSetupDialog from './components/auth/ProfileSetupDialog';
+import CustomerLayout from './pages/customer/CustomerLayout';
 import CatalogPage from './pages/customer/CatalogPage';
+import CartPage from './pages/customer/CartPage';
+import CheckoutPage from './pages/customer/CheckoutPage';
+import OrderConfirmationPage from './pages/customer/OrderConfirmationPage';
+import OrdersPage from './pages/customer/OrdersPage';
+import OrderTrackingPage from './pages/customer/OrderTrackingPage';
+import AboutPage from './pages/customer/AboutPage';
+import ContactPage from './pages/customer/ContactPage';
+import GoalsPage from './pages/customer/GoalsPage';
+import LoginPage from './pages/auth/LoginPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import DashboardPage from './pages/admin/DashboardPage';
 import ProductsPage from './pages/admin/ProductsPage';
-import SuppliersPage from './pages/admin/SuppliersPage';
-import InventoryPage from './pages/admin/InventoryPage';
-import StaffPage from './pages/admin/StaffPage';
-import BillingModePage from './pages/billing/BillingModePage';
+import OrderManagementPage from './pages/admin/OrderManagementPage';
 import AccessDeniedScreen from './components/auth/AccessDeniedScreen';
-import { Variant_customer_staff } from './backend';
+import { UserRole } from './backend';
 import { useEffect } from 'react';
 
 // Root layout component
@@ -29,10 +36,10 @@ function RootLayout() {
 // Admin route guard component
 function AdminRouteGuard() {
   const { identity } = useInternetIdentity();
-  const { data: profile, isLoading } = useGetCallerUserProfile();
+  const { data: role, isLoading } = useGetCallerUserRole();
 
   if (!identity) {
-    return <AccessDeniedScreen message="Please login to access the admin area" />;
+    return <AccessDeniedScreen />;
   }
 
   if (isLoading) {
@@ -46,38 +53,43 @@ function AdminRouteGuard() {
     );
   }
 
-  if (!profile || profile.userType !== Variant_customer_staff.staff) {
-    return <AccessDeniedScreen message="Admin access is restricted to staff members only" />;
+  if (role !== UserRole.admin) {
+    return <AccessDeniedScreen />;
   }
 
   return <AdminLayout />;
 }
 
-// Billing route guard component
-function BillingRouteGuard() {
+// Customer route guard for cart/checkout/orders
+function CustomerRouteGuard({ children }: { children: React.ReactNode }) {
   const { identity } = useInternetIdentity();
-  const { data: profile, isLoading } = useGetCallerUserProfile();
 
   if (!identity) {
-    return <AccessDeniedScreen message="Please login to access billing mode" />;
+    return <AccessDeniedScreen />;
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  return <>{children}</>;
+}
 
-  if (!profile || profile.userType !== Variant_customer_staff.staff) {
-    return <AccessDeniedScreen message="Billing mode is restricted to staff members only" />;
-  }
+// Customer layout wrapper with admin auto-redirect
+function CustomerLayoutWrapper() {
+  const navigate = useNavigate();
+  const { identity, isInitializing } = useInternetIdentity();
+  const { data: role, isLoading: roleLoading } = useGetCallerUserRole();
+  const { data: userProfile, isLoading: profileLoading } = useGetCallerUserProfile();
 
-  return <BillingModePage />;
+  useEffect(() => {
+    // Only redirect after everything is loaded and user has a profile
+    if (!isInitializing && !roleLoading && !profileLoading && identity && userProfile && role === UserRole.admin) {
+      const currentPath = window.location.pathname;
+      // Only redirect if not already on admin route
+      if (!currentPath.startsWith('/admin')) {
+        navigate({ to: '/admin', replace: true });
+      }
+    }
+  }, [identity, role, userProfile, isInitializing, roleLoading, profileLoading, navigate]);
+
+  return <CustomerLayout />;
 }
 
 // Create root route
@@ -85,11 +97,92 @@ const rootRoute = createRootRoute({
   component: RootLayout,
 });
 
-// Customer routes
-const indexRoute = createRoute({
+// Login route (no auth required)
+const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
+  path: '/login',
+  component: LoginPage,
+});
+
+// Customer routes with layout
+const customerLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: 'customer',
+  component: CustomerLayoutWrapper,
+});
+
+const indexRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
   path: '/',
   component: CatalogPage,
+});
+
+const aboutRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/about',
+  component: AboutPage,
+});
+
+const contactRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/contact',
+  component: ContactPage,
+});
+
+const goalsRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/goals',
+  component: GoalsPage,
+});
+
+const cartRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/cart',
+  component: () => (
+    <CustomerRouteGuard>
+      <CartPage />
+    </CustomerRouteGuard>
+  ),
+});
+
+const checkoutRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/checkout',
+  component: () => (
+    <CustomerRouteGuard>
+      <CheckoutPage />
+    </CustomerRouteGuard>
+  ),
+});
+
+const ordersRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/orders',
+  component: () => (
+    <CustomerRouteGuard>
+      <OrdersPage />
+    </CustomerRouteGuard>
+  ),
+});
+
+const orderTrackingRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/orders/$orderId',
+  component: () => (
+    <CustomerRouteGuard>
+      <OrderTrackingPage />
+    </CustomerRouteGuard>
+  ),
+});
+
+const orderConfirmationRoute = createRoute({
+  getParentRoute: () => customerLayoutRoute,
+  path: '/order-confirmation/$orderId',
+  component: () => (
+    <CustomerRouteGuard>
+      <OrderConfirmationPage />
+    </CustomerRouteGuard>
+  ),
 });
 
 // Admin routes with protection
@@ -111,42 +204,31 @@ const adminProductsRoute = createRoute({
   component: ProductsPage,
 });
 
-const adminSuppliersRoute = createRoute({
+const adminOrdersRoute = createRoute({
   getParentRoute: () => adminRoute,
-  path: '/suppliers',
-  component: SuppliersPage,
-});
-
-const adminInventoryRoute = createRoute({
-  getParentRoute: () => adminRoute,
-  path: '/inventory',
-  component: InventoryPage,
-});
-
-const adminStaffRoute = createRoute({
-  getParentRoute: () => adminRoute,
-  path: '/staff',
-  component: StaffPage,
-});
-
-// Billing route with cashier protection
-const billingRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/billing',
-  component: BillingRouteGuard,
+  path: '/orders',
+  component: OrderManagementPage,
 });
 
 // Create route tree
 const routeTree = rootRoute.addChildren([
-  indexRoute,
+  loginRoute,
+  customerLayoutRoute.addChildren([
+    indexRoute,
+    aboutRoute,
+    contactRoute,
+    goalsRoute,
+    cartRoute,
+    checkoutRoute,
+    ordersRoute,
+    orderTrackingRoute,
+    orderConfirmationRoute,
+  ]),
   adminRoute.addChildren([
     adminDashboardRoute,
     adminProductsRoute,
-    adminSuppliersRoute,
-    adminInventoryRoute,
-    adminStaffRoute,
+    adminOrdersRoute,
   ]),
-  billingRoute,
 ]);
 
 // Create router
@@ -165,13 +247,6 @@ export default function App() {
 
   const isAuthenticated = !!identity;
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
-
-  // Clear cache on logout
-  useEffect(() => {
-    if (!identity) {
-      // Cache is cleared in LoginButton component
-    }
-  }, [identity]);
 
   if (isInitializing) {
     return (

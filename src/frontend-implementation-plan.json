@@ -1,434 +1,53 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Online Kirana Store Frontend (Customer + Admin ERP + POS) with Shared Inventory",
+  "title": "Stabilize Version 7 go-live by fixing frontend build/runtime blockers and safe routing redirects",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Mobile-first customer storefront to browse/search catalog, manage cart, checkout, and view/track orders.",
+      "id": "REQ-45",
+      "summary": "Resolve frontend compile/build/runtime-blocking issues discovered during a clean rebuild with minimal stability-focused changes.",
       "acceptanceCriteria": [
-        "Customer can search and filter products and add/remove items from cart.",
-        "Checkout creates an online order in the backend and reduces inventory appropriately (with stock validation).",
-        "Customer can view all their orders and see the latest status and full status history per order.",
-        "UI is optimized for mobile web with large tap targets (big buttons) and fast navigation."
+        "Backend canister builds successfully (Motoko compilation completes with no errors).",
+        "Frontend builds successfully (TypeScript + bundler build completes with no errors).",
+        "App can start and render the root route (/) and login route (/login) without runtime exceptions in the console.",
+        "A new draft can be generated and the publish/go-live step completes successfully without deployment errors."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/App.tsx",
-          "operation": "create",
-          "description": "Create the app shell and customer routes (catalog, product detail, cart/checkout, order history, order detail) and wire navigation so customer pages are reachable (no orphan views). Use shadcn-ui layout primitives (e.g., buttons/cards/dialogs) for consistent touch-friendly UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/CatalogPage.tsx",
-          "operation": "create",
-          "description": "Implement customer catalog browsing with mobile-first product grid/list, category filtering (dry grocery categories only), and search. Use shadcn-ui Input/Button/Card to provide large tap targets and consistent styling. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/ProductDetailPage.tsx",
-          "operation": "create",
-          "description": "Implement product/unit details view with unit selection, pricing display, and add-to-cart controls. Use shadcn-ui components for forms and CTA sizing. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/CartCheckoutPage.tsx",
-          "operation": "create",
-          "description": "Implement cart review, quantity editing, and checkout UI with stock validation errors shown clearly; invoke backend capability to place order when available and optimistically update UI. Use shadcn-ui Dialog/Alert styling for error states and confirmation. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/OrdersPage.tsx",
-          "operation": "create",
-          "description": "Implement order history list with status chips and ability to open order detail; designed for fast mobile navigation. Use shadcn-ui Card and Button components. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/OrderDetailPage.tsx",
-          "operation": "create",
-          "description": "Implement order detail view showing latest status and full status timeline; include notification/event history section (when available). Use shadcn-ui timeline-like layout via Card/Separator patterns. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/state/cartStore.ts",
-          "operation": "create",
-          "description": "Add a small client-side cart store (persisted locally) supporting add/remove/update quantities and clearing on successful checkout."
-        },
-        {
-          "path": "frontend/src/hooks/useCatalog.ts",
-          "operation": "create",
-          "description": "Create React Query hooks for fetching products/units and deriving catalog filters/search results; set up cache keys to support refetching for inventory/availability changes."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Frontend authentication UX for customers and staff with OTP/password-style flows and role-based route protection (using Internet Identity + RBAC UI guards).",
-      "acceptanceCriteria": [
-        "Customer registration requires verifying either a phone number or email via an OTP challenge before account activation.",
-        "Customer login supports password login and OTP login.",
-        "Password reset requires an OTP challenge tied to the email/phone identifier.",
-        "Staff accounts are restricted by role: cashier can access Billing Mode; delivery boy can access assigned deliveries; manager/admin can manage products, inventory, orders, and analytics.",
-        "All protected routes in the frontend redirect/deny access when the role is insufficient."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useAuth.ts",
-          "operation": "create",
-          "description": "Add auth helper hook that uses the authorization component patterns (Internet Identity + backend role/profile calls) to expose: isAuthenticated, userRole, userProfile, and helpers to clear cached data on logout. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/LoginButton.tsx",
-          "operation": "create",
-          "description": "Create a login/logout button using the authorization component guidance (Internet Identity login, clear react-query cache on logout). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/ProfileSetupDialog.tsx",
-          "operation": "create",
-          "description": "Implement first-login profile setup modal (name + userType/customer vs staff selection) backed by getCallerUserProfile/saveCallerUserProfile. Use shadcn-ui Dialog/Input/Button; prevent flash using the authorization component's recommended query gating. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/OtpFlowScreens.tsx",
-          "operation": "create",
-          "description": "Implement OTP-style screens for register/login/reset as an in-app fallback (on-screen OTP display for testing per constraints), while still using Internet Identity for actual session identity. Use shadcn-ui components for form UX. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/ProtectedRoute.tsx",
-          "operation": "create",
-          "description": "Add a route guard wrapper enforcing role-based access for customer vs staff areas and staff sub-roles (cashier/delivery/manager). Show an access denied screen on insufficient role. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/auth/AccessDeniedScreen.tsx",
-          "operation": "create",
-          "description": "Create an AccessDeniedScreen component per authorization component UI guidance, with clear next actions (login/logout/go back). Verify the component's usage instructions before implementing."
+          "path": "frontend/src/backend.d.ts",
+          "operation": "modify",
+          "description": "Align the generated/declared backendInterface type with the actor usage in the frontend so TypeScript builds cleanly (e.g., include the access-control initialization function that the actor wrapper invokes)."
         },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Wire authentication UI (LoginButton, ProfileSetupDialog) and protect admin/billing/delivery routes using ProtectedRoute role checks. Verify the component's usage instructions before implementing."
+          "description": "Stabilize app startup rendering by removing any browser-global assumptions and ensuring initial-route rendering/redirect logic cannot throw at first load (keep changes minimal and focused on build/runtime stability). Also ensure admin auto-redirect remains effect-driven. Use the selected \"authorization\" component patterns for role-based gating behavior where applicable; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/auth/LoginPage.tsx",
+          "operation": "modify",
+          "description": "Ensure the /login route renders safely in all auth states and that post-login redirection remains stable and non-blocking (no render-time navigation, no loops), supporting clean first load and production builds. Use the selected \"authorization\" component patterns for authenticated redirects/role checks where applicable; verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-4",
-      "summary": "Near-real-time shared inventory visibility across customer and admin UIs using polling/refresh patterns (no WebSockets).",
+      "id": "REQ-46",
+      "summary": "Audit and fix routing/guard/redirect logic to prevent any navigate/redirect during render and handle redirects in effects or router-safe lifecycle hooks.",
       "acceptanceCriteria": [
-        "Placing an online order reduces inventory and is immediately reflected in Admin ERP inventory views.",
-        "Completing an offline POS sale reduces inventory and is immediately reflected in the customer storefront availability checks.",
-        "Frontend uses a consistent refresh strategy (e.g., React Query refetch intervals/manual refresh) to reflect stock/order changes without WebSockets.",
-        "When stock is insufficient, online checkout and POS billing both block completion with a clear error message."
+        "No route performs navigate()/redirect imperatively during the render path (only in effects or router lifecycle hooks).",
+        "Visiting /login while already authenticated redirects without triggering React warnings/errors about updates during render.",
+        "Visiting /admin as a non-admin shows the Access Denied screen without errors."
       ],
       "file_operations": [
-        {
-          "path": "frontend/src/lib/refreshPolicy.ts",
-          "operation": "create",
-          "description": "Define a shared polling/refetch policy (intervals, stale times, manual refresh helpers) to be reused across inventory, catalog availability, and order status queries."
-        },
-        {
-          "path": "frontend/src/hooks/useInventory.ts",
-          "operation": "create",
-          "description": "Create React Query hooks to fetch inventory and derive sellable stock (excluding damaged/expired when backend provides those fields), using the shared refresh policy."
-        },
-        {
-          "path": "frontend/src/pages/customer/CartCheckoutPage.tsx",
-          "operation": "modify",
-          "description": "Add stock validation using refreshed inventory/availability checks; block checkout completion with clear error messaging when insufficient stock. Use shadcn-ui alert/dialog patterns. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/InventoryPage.tsx",
-          "operation": "create",
-          "description": "Implement admin inventory views that refetch on an interval and include a manual refresh action so stock changes from online orders/POS are reflected quickly. Use shadcn-ui Table/Card/Button. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Admin ERP area for product and inventory management: suppliers, min-stock, expiry, damaged stock, and inventory list views with filters.",
-      "acceptanceCriteria": [
-        "Admin can create and edit products including pricing, units, and category.",
-        "Admin can assign inventory to suppliers and view stock grouped by supplier.",
-        "Admin can set and edit min-stock thresholds per product and see a low-stock list.",
-        "Admin can record expiry dates and mark items as damaged, with these quantities excluded from sellable stock.",
-        "Inventory screens support search and basic filters (low stock, expiring soon, expired, damaged)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AdminLayout.tsx",
-          "operation": "create",
-          "description": "Create Admin ERP layout with mobile-friendly navigation (sidebar/drawer on larger screens, bottom/top navigation on phones). Use shadcn-ui navigation primitives. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/ProductsPage.tsx",
-          "operation": "create",
-          "description": "Implement product list + add/edit product UI (including unit/variant editing and categories limited to dry grocery). Use shadcn-ui Table/Form/Dialog and large CTAs. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/SuppliersPage.tsx",
-          "operation": "create",
-          "description": "Implement supplier list + add/edit supplier UI and supplier-wise stock grouping entry points. Use shadcn-ui components. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/InventoryPage.tsx",
-          "operation": "modify",
-          "description": "Extend inventory UI to support search and filters (low stock, expiring soon, expired, damaged) and supplier grouping, using fields returned by backend when available. Use shadcn-ui controls for filter chips and inputs. Verify the component's usage instructions before implementing."
-        },
         {
           "path": "frontend/src/App.tsx",
           "operation": "modify",
-          "description": "Wire Admin ERP routes (products, suppliers, inventory) under a protected admin area and ensure manager/admin role gating via ProtectedRoute. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Admin ERP Excel import/export for products and stock with client-side validation and clear result summaries.",
-      "acceptanceCriteria": [
-        "Admin can download an export file containing current products + inventory (including min stock, expiry, damaged, supplier).",
-        "Admin can upload an .xlsx file that is validated client-side and then applied server-side with a clear success/error summary (created/updated/skipped rows).",
-        "Imports are idempotent where possible (same product identifier updates rather than duplicates)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/ImportExportPage.tsx",
-          "operation": "create",
-          "description": "Implement import/export screen: download actions (trigger backend export when available) and upload .xlsx file selection with client-side validation and a results summary panel. Use shadcn-ui Input/Button/Card and a Dialog for confirmations. Verify the component's usage instructions before implementing."
+          "description": "Refactor guard/wrapper logic to ensure navigation decisions (including admin auto-redirect) are derived from router state and executed only within effects (or router lifecycle hooks), never during render, and cannot cause redirect loops. Use the selected \"authorization\" component guidance for AccessDenied behavior and role-based gating; verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/lib/xlsx.ts",
-          "operation": "create",
-          "description": "Add frontend utilities to parse and validate .xlsx files (sheet/column presence, required fields, data types) before submitting to backend capability; produce a row-level validation report for the UI."
-        },
-        {
-          "path": "frontend/src/App.tsx",
+          "path": "frontend/src/pages/auth/LoginPage.tsx",
           "operation": "modify",
-          "description": "Wire the Import/Export page into the protected Admin ERP route tree and navigation. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "summary": "Admin mobile Billing Mode (POS) for Android browsers: fast search, bill building, discount, Cash/UPI payment selection, and complete sale.",
-      "acceptanceCriteria": [
-        "Billing Mode UI is mobile-first with large buttons and fast search.",
-        "Cashier can build a bill with multiple line items, set quantities, and apply a bill-level discount.",
-        "Cashier can select payment method (Cash or UPI) before completing the sale.",
-        "Completing a sale creates a POS sale record and reduces inventory accordingly.",
-        "POS sales are included in admin analytics (sales totals, cash vs UPI)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/billing/BillingModePage.tsx",
-          "operation": "create",
-          "description": "Implement phone-optimized Billing Mode: product search, barcode-free quick add, quantity editing keypad-like controls, bill summary, discount, payment method selection (Cash/UPI), and complete sale with clear success/failure UI. Use shadcn-ui Button/Input/Card/Tabs for fast interaction. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/state/billingStore.ts",
-          "operation": "create",
-          "description": "Add client-side bill state management (line items, quantities, discount, payment method) with reset on completion and guardrails for invalid quantities."
-        },
-        {
-          "path": "frontend/src/pages/billing/BillingModePage.tsx",
-          "operation": "modify",
-          "description": "Add inventory polling and stock validation that blocks completion with clear error messages when insufficient stock (per shared refresh strategy). Use shadcn-ui dialog/alert patterns. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire Billing Mode route and enforce cashier-only access via ProtectedRoute role checks; ensure it is reachable from admin navigation on mobile. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "summary": "Admin ERP order management: accept/reject, status updates with history, delivery assignment, delivery staff views, returns and refunds workflows.",
-      "acceptanceCriteria": [
-        "Admin can view new orders and accept or reject them with a recorded reason for rejection.",
-        "Admin can update order statuses and each change is recorded in order status history.",
-        "Admin can assign an order to a delivery boy account; delivery boy can see only assigned orders.",
-        "Admin can mark returns approved and mark refunds processed, updating order state accordingly.",
-        "Refunding/cancelling restores inventory according to defined rules (e.g., only if it was previously deducted)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/OrdersPage.tsx",
-          "operation": "create",
-          "description": "Implement admin order list with filters by status, accept/reject actions (with reason capture), and navigation to order detail. Use shadcn-ui Table/Dialog/Form patterns. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/OrderAdminDetailPage.tsx",
-          "operation": "create",
-          "description": "Implement admin order detail view: status timeline, status update actions, delivery assignment to staff, returns/refunds actions with confirmation and error handling. Use shadcn-ui components for action panels and dialogs. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/delivery/MyDeliveriesPage.tsx",
-          "operation": "create",
-          "description": "Implement delivery staff view that lists only assigned orders and allows status progression steps where permitted. Use shadcn-ui Card/Button for large tap targets. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire order management routes under Admin ERP and delivery routes under delivery role; enforce manager/admin vs delivery role restrictions via ProtectedRoute. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "summary": "Notification/event history UI for order status changes and admin alerts (new order, low stock, high value).",
-      "acceptanceCriteria": [
-        "Every order status change emits a notification event record (who/when/what changed).",
-        "Admin ERP shows an alerts panel with: new order events, low-stock triggers, and high-value order triggers (threshold configurable).",
-        "Customer order detail page shows a history of status changes (and related notification events)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/AlertsPage.tsx",
-          "operation": "create",
-          "description": "Implement admin alerts panel UI with sections for new order events, low-stock alerts, and high-value order alerts (including UI to set/view threshold when backend supports it). Use shadcn-ui Tabs/Card. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/customer/OrderDetailPage.tsx",
-          "operation": "modify",
-          "description": "Add a notification/event history section to the customer order detail page to display status change events in chronological order (when available). Use shadcn-ui Card/Separator patterns. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/OrderAdminDetailPage.tsx",
-          "operation": "modify",
-          "description": "Add order notification history section in admin order detail, showing who/when/what changed for status transitions. Use shadcn-ui components. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire Alerts page into Admin ERP navigation and protected routes. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-10",
-      "summary": "Admin dashboard analytics UI combining online orders and offline POS sales with key widgets and breakdowns.",
-      "acceptanceCriteria": [
-        "Dashboard shows total sales for a selected time range and splits by online vs offline.",
-        "Dashboard shows payment breakdown for offline sales (Cash vs UPI).",
-        "Profit metrics compute using stored cost price vs selling price (where available).",
-        "Dashboard shows low-stock and expiring-soon widgets and a top-selling products list."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/DashboardPage.tsx",
-          "operation": "create",
-          "description": "Implement admin dashboard UI: time-range selector, sales totals (online vs offline), cash vs UPI breakdown, profit widget, low-stock and expiring-soon widgets, and top-selling list. Use shadcn-ui Card and chart-friendly layout (no external AI). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useAnalytics.ts",
-          "operation": "create",
-          "description": "Create React Query hooks to fetch/compose analytics data from backend capabilities when available; centralize refresh intervals suitable for dashboard widgets."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire Dashboard as the Admin ERP landing route and link it in admin navigation with role protection. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-11",
-      "summary": "Insights page UI for deterministic analytics: forecasting, reorder suggestions, dead stock, and anomaly flags (no external AI services).",
-      "acceptanceCriteria": [
-        "Admin can open an ‘Insights’ page that shows forecasted demand per product for a configurable window.",
-        "Reorder suggestions list products with recommended reorder quantity based on current sellable stock and forecast assumptions.",
-        "Dead stock report lists products with no sales in a configurable period.",
-        "Anomaly report flags high discount rates, frequent refunds, or unusually high order values relative to history using transparent rules."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/admin/InsightsPage.tsx",
-          "operation": "create",
-          "description": "Implement Insights UI with configurable windows/thresholds and tabs for demand forecast, reorder suggestions, dead stock, and anomalies; clearly explain rule-based calculations in the UI (no external AI). Use shadcn-ui Tabs/Card/Input. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/lib/insightsRules.ts",
-          "operation": "create",
-          "description": "Add deterministic, transparent frontend-side helper calculations (e.g., moving average, reorder heuristics, anomaly thresholds) to visualize results when backend provides the underlying sales/order inputs."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire Insights page into Admin ERP navigation and protect it for manager/admin roles. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-12",
-      "summary": "Dark/light mode across customer, admin, and billing with persistent preference and touch-friendly controls.",
-      "acceptanceCriteria": [
-        "User can toggle dark/light mode and the choice persists locally.",
-        "Key interactive controls (add to cart, checkout, complete sale) meet a large touch target standard.",
-        "All primary screens render correctly on common mobile widths without horizontal scrolling."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useTheme.ts",
-          "operation": "create",
-          "description": "Implement theme mode management (dark/light) using the Tailwind 'class' strategy with local persistence; expose toggle helpers and initialize on app load."
-        },
-        {
-          "path": "frontend/index.css",
-          "operation": "modify",
-          "description": "Adjust base styles to ensure both light and dark palettes render cleanly and maintain consistent spacing and touch targets across the app."
-        },
-        {
-          "path": "frontend/src/components/ThemeToggle.tsx",
-          "operation": "create",
-          "description": "Create a theme toggle control usable in both customer and admin headers. Use shadcn-ui Button and accessible labeling. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire ThemeToggle into the main app shell so all areas (customer/admin/billing) share the same persisted theme setting. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-13",
-      "summary": "Apply a consistent kirana-market visual theme (avoid blue/purple) across customer, admin, and billing UIs.",
-      "acceptanceCriteria": [
-        "Theme uses a consistent palette and typography across all screens (customer/admin/billing).",
-        "Theme avoids blue/purple as the primary brand colors.",
-        "Primary/secondary action styling is consistent and accessible in both dark and light modes."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/index.css",
-          "operation": "modify",
-          "description": "Define warm kirana-style design tokens (primary/secondary/accent/chart colors) using non-blue/purple brand hues and ensure readable contrast in both light and dark modes."
-        },
-        {
-          "path": "frontend/tailwind.config.js",
-          "operation": "modify",
-          "description": "Align Tailwind theme extensions with the kirana-market palette and ensure component tokens map consistently to the updated CSS variables (avoid blue/purple defaults)."
-        },
-        {
-          "path": "frontend/src/components/KiranaBrandHeader.tsx",
-          "operation": "create",
-          "description": "Create a reusable header component that applies consistent typography, spacing, and brand styling for customer/admin/billing contexts, designed for mobile-first layouts. Use shadcn-ui Button and layout primitives. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Adopt KiranaBrandHeader across primary screens to ensure consistent theme application and reduce one-off styling. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/public/assets/generated/kirana-logo.dim_512x512.png",
-          "operation": "create",
-          "description": "Add generated image asset to the workspace and prepare it for use as the app logo in the UI."
-        },
-        {
-          "path": "frontend/public/assets/generated/hero-banner.dim_1600x600.png",
-          "operation": "create",
-          "description": "Add generated image asset to the workspace and prepare it for use in the customer catalog hero section."
-        },
-        {
-          "path": "frontend/public/assets/generated/categories-icons-sprite.dim_1024x1024.png",
-          "operation": "create",
-          "description": "Add generated image asset to the workspace and prepare it for use as category icons in the customer catalog."
-        },
-        {
-          "path": "frontend/src/pages/customer/CatalogPage.tsx",
-          "operation": "modify",
-          "description": "Wire generated brand assets into the catalog UI: use frontend/public/assets/generated/kirana-logo.dim_512x512.png in the header and frontend/public/assets/generated/hero-banner.dim_1600x600.png as the hero banner; use frontend/public/assets/generated/categories-icons-sprite.dim_1024x1024.png for category shortcuts. Verify the component's usage instructions before implementing."
+          "description": "Harden authenticated-user redirect handling so that /login redirects are performed only in effects once role state is ready, using safe replace-style navigation and avoiding any state updates during render. Use the selected \"authorization\" component guidance for login/logout cache-clearing and role-based redirects; verify the component's usage instructions before implementing."
         }
       ]
     }

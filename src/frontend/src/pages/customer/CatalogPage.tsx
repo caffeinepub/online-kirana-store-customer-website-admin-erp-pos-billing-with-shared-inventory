@@ -1,234 +1,210 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import KiranaBrandHeader from '../../components/KiranaBrandHeader';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Search, Package, AlertCircle, ShoppingCart, LayoutGrid } from 'lucide-react';
-import { SiFacebook, SiInstagram, SiX } from 'react-icons/si';
-import { useGetProductUnits, useGetInventory } from '../../hooks/useQueries';
+import { useGetAllProducts, useAddToCart } from '../../hooks/useQueries';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
-
-const CATEGORIES = [
-  { id: 'rice', name: 'Rice & Grains', icon: '🌾' },
-  { id: 'atta', name: 'Atta & Flour', icon: '🌾' },
-  { id: 'dal', name: 'Dal & Pulses', icon: '🫘' },
-  { id: 'oil', name: 'Cooking Oil', icon: '🛢️' },
-  { id: 'snacks', name: 'Snacks & Biscuits', icon: '🍪' },
-  { id: 'soap', name: 'Soap & Hygiene', icon: '🧼' },
-  { id: 'shampoo', name: 'Hair Care', icon: '🧴' },
-  { id: 'packaged', name: 'Packaged Goods', icon: '📦' },
-];
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Search, ShoppingCart, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { toast } from 'sonner';
+import Hero3D from '../../components/hero/Hero3D';
+import CategoriesMixedSection from '../../components/catalog/CategoriesMixedSection';
 
 export default function CatalogPage() {
   const navigate = useNavigate();
   const { identity } = useInternetIdentity();
+  const { data: products = [], isLoading } = useGetAllProducts();
+  const addToCart = useAddToCart();
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const { data: products = [], isLoading: productsLoading } = useGetProductUnits();
-  const { data: inventory = [], isLoading: inventoryLoading } = useGetInventory();
+  const categories = useMemo(() => {
+    const cats = new Set(products.map(p => p.category));
+    return ['all', ...Array.from(cats)];
+  }, [products]);
 
-  const isLoading = productsLoading || inventoryLoading;
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategory]);
 
-  // Get stock quantity for a product unit
-  const getStockQty = (unitId: bigint): bigint => {
-    const invEntry = inventory.find((inv) => inv.unitId === unitId);
-    return invEntry?.qty ?? BigInt(0);
+  const handleAddToCart = async (productId: bigint) => {
+    if (!identity) {
+      toast.error('Please login to add items to cart');
+      return;
+    }
+
+    try {
+      await addToCart.mutateAsync({ productId, quantity: 1n });
+      toast.success('Added to cart!');
+    } catch (error: any) {
+      console.error('Add to cart error:', error);
+      toast.error(error.message || 'Failed to add to cart');
+    }
   };
 
-  // Filter products based on search and category
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = searchQuery
-      ? product.unitName.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-    // Category filtering would require product category field (not in current backend)
-    return matchesSearch;
-  });
-
   return (
-    <div className="min-h-screen bg-background">
-      <KiranaBrandHeader />
-
-      {/* Hero Banner */}
-      <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b">
-        <div className="container px-4 py-12 md:py-16">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-              Fresh Groceries
-              <br />
-              <span className="text-primary">Delivered Daily</span>
-            </h1>
-            <p className="text-lg text-muted-foreground mb-6">
-              Quality dry groceries for your home. Rice, Atta, Dal, Oil, Snacks & more.
-            </p>
-            {!identity && (
-              <div className="flex flex-wrap gap-3">
-                <Button size="lg" className="h-12 px-8">
+    <div className="min-h-screen">
+      {/* Enhanced Grocery-Themed Hero Section with 3D */}
+      <section className="relative bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-orange-950/30 dark:via-amber-950/30 dark:to-yellow-900/20 border-b overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(251,146,60,0.1),transparent_50%)] dark:bg-[radial-gradient(circle_at_30%_50%,rgba(251,146,60,0.05),transparent_50%)]" />
+        <div className="container px-4 py-20 md:py-28 relative">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Hero Content */}
+            <div className="space-y-8 z-10">
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/15 text-primary text-sm font-semibold shadow-sm">
+                <Sparkles className="w-4 h-4 animate-pulse" />
+                <span>Fresh Arrivals Daily • Best Prices</span>
+              </div>
+              <h1 className="text-5xl md:text-7xl font-bold leading-tight tracking-tight">
+                Welcome to <br />
+                <span className="text-primary">
+                  Shree Kirana
+                </span>
+              </h1>
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-lg leading-relaxed">
+                Your trusted neighborhood store for fresh groceries, daily essentials, and quality products at unbeatable prices.
+              </p>
+              <div className="flex flex-wrap gap-4 pt-4">
+                <Button size="lg" className="text-lg px-10 py-6 shadow-lg hover:shadow-xl transition-all" onClick={() => {
+                  const productsSection = document.getElementById('categories');
+                  productsSection?.scrollIntoView({ behavior: 'smooth' });
+                }}>
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Start Shopping
                 </Button>
+                <Button size="lg" variant="outline" className="text-lg px-10 py-6 shadow-md hover:shadow-lg transition-all" onClick={() => navigate({ to: '/about' })}>
+                  Learn More
+                </Button>
               </div>
-            )}
+            </div>
+
+            {/* Enhanced 3D Grocery Basket Scene */}
+            <div className="relative h-[350px] md:h-[450px] lg:h-[550px]">
+              <div className="absolute inset-0 bg-gradient-to-t from-orange-50 via-transparent to-transparent dark:from-orange-950/30 z-10 pointer-events-none" />
+              <div className="absolute -inset-4 bg-gradient-to-r from-orange-200/20 to-amber-200/20 dark:from-orange-800/10 dark:to-amber-800/10 blur-3xl rounded-full" />
+              <Hero3D />
+            </div>
           </div>
         </div>
-      </div>
+        
+        {/* Decorative wave separator */}
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent" />
+      </section>
 
-      {/* Categories */}
-      <div className="border-b bg-card">
-        <div className="container px-4 py-6">
-          <div className="flex items-center gap-2 mb-4">
-            <LayoutGrid className="h-5 w-5 text-muted-foreground" />
-            <h2 className="font-semibold text-lg">Shop by Category</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            {CATEGORIES.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(selectedCategory === category.id ? null : category.id)}
-                className={`p-4 rounded-lg border-2 transition-all hover:border-primary hover:bg-primary/5 ${
-                  selectedCategory === category.id ? 'border-primary bg-primary/10' : 'border-border'
-                }`}
-              >
-                <div className="text-3xl mb-2">{category.icon}</div>
-                <div className="text-sm font-medium text-center">{category.name}</div>
-              </button>
-            ))}
-          </div>
+      {/* Categories Section with Mixed Layout */}
+      <section id="categories" className="container px-4 py-16 md:py-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Shop by Category</h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Browse our wide selection of fresh groceries and daily essentials
+          </p>
         </div>
-      </div>
+        
+        <CategoriesMixedSection
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+      </section>
 
-      {/* Search & Products */}
-      <div className="container px-4 py-8">
+      {/* Products Section */}
+      <section id="products" className="container px-4 py-12 pb-20">
         {/* Search Bar */}
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+        <div className="mb-10">
+          <div className="relative max-w-2xl mx-auto">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
             <Input
-              type="search"
-              placeholder="Search for products..."
+              type="text"
+              placeholder="Search for products, brands, and more..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-14 text-base"
+              className="pl-12 h-14 text-lg shadow-md"
             />
           </div>
         </div>
 
         {/* Products Grid */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading products...</p>
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary mx-auto mb-6"></div>
+            <p className="text-muted-foreground text-lg">Loading fresh products...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <Card className="max-w-md mx-auto">
-            <CardContent className="pt-6 text-center">
-              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium mb-2">No products found</p>
-              <p className="text-sm text-muted-foreground">
-                {searchQuery ? 'Try a different search term' : 'Products will appear here once added by admin'}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🔍</div>
+            <p className="text-muted-foreground text-xl mb-2">No products found</p>
+            <p className="text-muted-foreground">Try adjusting your search or category filter</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => {
-              const stockQty = getStockQty(product.id);
-              const isLowStock = stockQty > BigInt(0) && stockQty <= product.minStock;
-              const isOutOfStock = stockQty === BigInt(0);
-
-              return (
-                <Card key={product.id.toString()} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg line-clamp-2">{product.unitName}</CardTitle>
-                      {isOutOfStock && (
-                        <Badge variant="destructive" className="shrink-0">
-                          Out of Stock
-                        </Badge>
-                      )}
-                      {isLowStock && !isOutOfStock && (
-                        <Badge variant="outline" className="shrink-0 border-orange-500 text-orange-600">
-                          Low Stock
-                        </Badge>
-                      )}
+          <>
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-muted-foreground">
+                Showing <span className="font-semibold text-foreground">{filteredProducts.length}</span> products
+                {selectedCategory !== 'all' && (
+                  <span> in <span className="font-semibold text-primary capitalize">{selectedCategory}</span></span>
+                )}
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => (
+                <Card key={product.id.toString()} className="flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                  <CardHeader className="p-0">
+                    <div className="aspect-square overflow-hidden rounded-t-lg bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20">
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/assets/generated/kirana-logo.dim_512x512.png';
+                        }}
+                      />
                     </div>
-                    <CardDescription>Stock: {stockQty.toString()} units</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold">₹{product.price.toString()}</span>
-                        <span className="text-sm text-muted-foreground">per unit</span>
-                      </div>
-                      <Button
-                        size="lg"
-                        className="w-full h-12"
-                        disabled={isOutOfStock || !identity}
-                      >
-                        <ShoppingCart className="mr-2 h-5 w-5" />
-                        {!identity ? 'Login to Order' : isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-                      </Button>
+                  <CardContent className="flex-1 p-5">
+                    <Badge variant="secondary" className="mb-3 capitalize text-xs font-semibold">
+                      {product.category}
+                    </Badge>
+                    <CardTitle className="text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                      {product.name}
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                      {product.description}
+                    </p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-bold text-primary">₹{Number(product.price)}</span>
+                      {Number(product.stock) > 0 ? (
+                        <span className="text-xs text-green-600 dark:text-green-400 font-medium">In Stock</span>
+                      ) : (
+                        <span className="text-xs text-red-600 dark:text-red-400 font-medium">Out of Stock</span>
+                      )}
                     </div>
                   </CardContent>
+                  <CardFooter className="p-5 pt-0">
+                    <Button
+                      className="w-full shadow-md hover:shadow-lg transition-all"
+                      onClick={() => handleAddToCart(product.id)}
+                      disabled={addToCart.isPending || Number(product.stock) === 0}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      {addToCart.isPending ? 'Adding...' : Number(product.stock) === 0 ? 'Out of Stock' : 'Add to Cart'}
+                    </Button>
+                  </CardFooter>
                 </Card>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          </>
         )}
-      </div>
-
-      {/* Footer */}
-      <footer className="border-t bg-card mt-16">
-        <div className="container px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">Kirana Store</h3>
-              <p className="text-sm text-muted-foreground">
-                Your trusted neighborhood grocery store. Quality products at affordable prices.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <button onClick={() => navigate({ to: '/admin' })} className="hover:text-foreground">
-                    Admin Panel
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate({ to: '/billing' })} className="hover:text-foreground">
-                    Billing Mode
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Connect With Us</h3>
-              <div className="flex gap-3">
-                <Button variant="outline" size="icon">
-                  <SiFacebook className="h-5 w-5" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <SiInstagram className="h-5 w-5" />
-                </Button>
-                <Button variant="outline" size="icon">
-                  <SiX className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div className="border-t pt-6 text-center text-sm text-muted-foreground">
-            <p>
-              © 2026. Built with ❤️ using{' '}
-              <a href="https://caffeine.ai" target="_blank" rel="noopener noreferrer" className="hover:text-foreground underline">
-                caffeine.ai
-              </a>
-            </p>
-          </div>
-        </div>
-      </footer>
+      </section>
     </div>
   );
 }
